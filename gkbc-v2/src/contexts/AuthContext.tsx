@@ -6,6 +6,7 @@ import type { Member } from '../types/index';
 interface AuthContextType {
   user: User | null;
   profile: Member | null;
+  userProfile: Member | null; // alias for profile, for compatibility
   loading: boolean;
   isAuthenticated: boolean;
   hasStatus: (status: Member['user_status'] | Member['user_status'][]) => boolean;
@@ -68,6 +69,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       value={{
         user,
         profile,
+        userProfile: profile, // alias for convenience
         loading,
         isAuthenticated: !!user,
         hasStatus,
