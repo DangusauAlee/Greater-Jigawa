@@ -25,22 +25,27 @@ export const MemberCard: React.FC<MemberCardProps> = ({
       <div className="flex flex-col flex-1">
         <div className="flex items-start justify-between mb-3">
           <div className="flex items-center gap-3 flex-1 min-w-0">
-            <div className="relative w-14 h-14 bg-gray-100 rounded-full overflow-hidden border-2 border-green-200 flex-shrink-0">
-              {member.avatar_url ? (
-                <img
-                  src={member.avatar_url}
-                  alt={member.full_name || `${member.first_name} ${member.last_name}`}
-                  className="w-full h-full object-cover"
-                  loading="lazy"
-                />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center bg-green-500 text-white font-bold">
-                  {getUserInitials(member.first_name, member.last_name)}
-                </div>
-              )}
+            {/* Avatar wrapper – no overflow hidden here */}
+            <div className="relative w-14 h-14 flex-shrink-0">
+              {/* Avatar image container – clips the image to a circle */}
+              <div className="w-full h-full rounded-full overflow-hidden border-2 border-green-200">
+                {member.avatar_url ? (
+                  <img
+                    src={member.avatar_url}
+                    alt={member.full_name || `${member.first_name} ${member.last_name}`}
+                    className="w-full h-full object-cover"
+                    loading="lazy"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center bg-green-500 text-white font-bold">
+                    {getUserInitials(member.first_name, member.last_name)}
+                  </div>
+                )}
+              </div>
+              {/* Badge positioned relative to the outer wrapper – can overflow */}
               {isVerified && (
-                <div className="absolute -bottom-1 -right-1">
-                  <VerifiedBadge size={16} />
+                <div className="absolute -bottom-0.5 -right-1 z-10">
+                  <VerifiedBadge size={14} />
                 </div>
               )}
             </div>
@@ -49,7 +54,7 @@ export const MemberCard: React.FC<MemberCardProps> = ({
                 <h3 className="font-bold text-gray-900 text-sm truncate">
                   {member.first_name} {member.last_name}
                 </h3>
-                {isVerified && <VerifiedBadge size={16} />}
+                {isVerified && <VerifiedBadge size={14} />}
               </div>
               {member.business_name && (
                 <p className="text-gray-700 text-xs font-medium truncate">{member.business_name}</p>
