@@ -8,11 +8,16 @@ import { ConnectionsTab } from '../components/members/ConnectionsTab';
 import { ConfirmationDialog } from '../components/shared/ConfirmationDialogue';
 import { FeedbackToast } from '../components/shared/FeedbackToast';
 import { formatTimeAgo } from '../utils/formatters';
+import { useAuth } from '../contexts/AuthContext'; // <-- import
 
 const Members: React.FC = () => {
   const navigate = useNavigate();
+  const { user } = useAuth(); // <-- get current user
 
-
+  useEffect(() => {
+    console.log('📦 MembersPage MOUNTED');
+    return () => console.log('🗑️ MembersPage UNMOUNTED');
+  }, []);
 
   const [activeTab, setActiveTab] = useState<'all' | 'connections'>('all');
   const [inputValue, setInputValue] = useState('');
@@ -34,7 +39,7 @@ const Members: React.FC = () => {
     'Central / Old City', 'Sabon Gari / Kantin Kwari', 'Farm Center / Beirut',
     'France Road', 'Zoo Road', 'Zaria Road', 'Dawanau', 'Sharada / Challawa',
     'Hotoro', 'Gyadi-Gyadi / Tarauni', 'Jigawa Road', 'Mariri / Sheka',
-    'Bompai', 'Transport (Kano Line / Sabon Gari Park)', 'Others'
+    'Bompai', 'Transport (Jigawa Line / Sabon Gari Park)', 'Others'
   ], []);
 
   const {
@@ -49,7 +54,19 @@ const Members: React.FC = () => {
     isFetching,
   } = useConnectionsData(search, businessType, marketArea);
 
-
+  console.log('🖥️ Members render:', {
+    isLoading,
+    isFetching,
+    membersPagesLength: membersPages.length,
+    totalMembers: membersPages.flat().length,
+    search,
+    businessType,
+    marketArea,
+    activeTab,
+    receivedCount: receivedRequests.length,
+    sentCount: sentRequests.length,
+    friendsCount: friends.length,
+  });
 
   // Debounce effect
   useEffect(() => {
@@ -68,6 +85,8 @@ const Members: React.FC = () => {
 
   const filteredMembers = useMemo(() => {
     return members.filter(member => {
+      // Exclude current user if logged in
+      if (user?.id && member.id === user.id) return false;
       const isFriend = friends.some(f => f.user_id === member.id);
       if (isFriend) return false;
       const isReceived = receivedRequests.some(req => req.sender_id === member.id);
@@ -76,7 +95,7 @@ const Members: React.FC = () => {
       if (isSent) return false;
       return true;
     });
-  }, [members, friends, receivedRequests, sentRequests]);
+  }, [members, friends, receivedRequests, sentRequests, user?.id]);
 
   const showFeedback = (message: string, type: 'success' | 'error') => {
     setFeedback({ message, type });
@@ -106,8 +125,10 @@ const Members: React.FC = () => {
         confirm.type === 'reject' ? 'Request rejected' :
         'Request withdrawn', 'success'
       );
-    } catch {
-      showFeedback(`Failed to ${confirm.type} connection`, 'error');
+    } catch (error: any) {
+      // Show actual error message from the backend
+      const errorMessage = error?.message || `Failed to ${confirm.type} connection`;
+      showFeedback(errorMessage, 'error');
     } finally {
       closeConfirmation();
     }
@@ -216,7 +237,7 @@ const Members: React.FC = () => {
 
   // --- Skeleton condition: only when there is no data at all ---
   if (isLoading && membersPages.length === 0) {
-    
+    console.log('🟡 Showing skeleton because isLoading =', isLoading, 'and no data');
     return (
       <div className="min-h-screen bg-gray-50">
         <div className="bg-gradient-to-r from-green-600 to-green-700 text-white p-4">

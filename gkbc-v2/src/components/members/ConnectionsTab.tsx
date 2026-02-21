@@ -47,18 +47,27 @@ export const ConnectionsTab: React.FC<ConnectionsTabProps> = ({
                   className="flex items-center gap-3 mb-4 cursor-pointer flex-1"
                   onClick={() => onProfileClick(request.sender_id)}
                 >
-                  <div className="relative w-14 h-14 bg-gray-100 rounded-full overflow-hidden border-2 border-green-300 flex-shrink-0">
-                    {request.sender_avatar ? (
-                      <img src={request.sender_avatar} alt={request.sender_name} className="w-full h-full object-cover" />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center bg-green-500 text-white font-bold">
-                        {request.sender_name.charAt(0)}
+                  {/* Avatar wrapper with relative positioning for the absolute badge */}
+                  <div className="relative flex-shrink-0">
+                    <div className="w-14 h-14 bg-gray-100 rounded-full overflow-hidden border-2 border-green-300">
+                      {request.sender_avatar ? (
+                        <img src={request.sender_avatar} alt={request.sender_name} className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center bg-green-500 text-white font-bold">
+                          {request.sender_name.charAt(0)}
+                        </div>
+                      )}
+                    </div>
+                    {request.sender_status === 'verified' && (
+                      <div className="absolute -bottom-1 -right-1 z-10">
+                        <VerifiedBadge size={14} />
                       </div>
                     )}
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-1.5">
                       <h3 className="font-bold text-gray-900 text-sm truncate">{request.sender_name}</h3>
+                      {request.sender_status === 'verified' && <VerifiedBadge size={10} />}
                       <span className="inline-flex items-center px-1 py-0.5 text-xs bg-yellow-100 text-yellow-700 font-bold rounded border border-yellow-300 flex-shrink-0">
                         Pending
                       </span>
@@ -98,17 +107,19 @@ export const ConnectionsTab: React.FC<ConnectionsTabProps> = ({
                 onClick={() => onProfileClick(friend.user_id)}
               >
                 <div className="flex items-center gap-3 mb-4">
-                  <div className="relative w-14 h-14 bg-gray-100 rounded-full overflow-hidden border-2 border-green-300 flex-shrink-0">
-                    {friend.user_avatar ? (
-                      <img src={friend.user_avatar} alt={friend.user_name} className="w-full h-full object-cover" />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center bg-green-500 text-white font-bold">
-                        {friend.user_name.charAt(0)}
-                      </div>
-                    )}
+                  <div className="relative flex-shrink-0">
+                    <div className="w-14 h-14 bg-gray-100 rounded-full overflow-hidden border-2 border-green-300">
+                      {friend.user_avatar ? (
+                        <img src={friend.user_avatar} alt={friend.user_name} className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center bg-green-500 text-white font-bold">
+                          {friend.user_name.charAt(0)}
+                        </div>
+                      )}
+                    </div>
                     {friend.user_status === 'verified' && (
-                      <div className="absolute -bottom-1 -right-1">
-                        <VerifiedBadge size={10} />
+                      <div className="absolute -bottom-1 -right-1 z-10">
+                        <VerifiedBadge size={14} />
                       </div>
                     )}
                   </div>
@@ -146,18 +157,26 @@ export const ConnectionsTab: React.FC<ConnectionsTabProps> = ({
                   className="flex items-center gap-3 mb-4 cursor-pointer flex-1"
                   onClick={() => onProfileClick(request.connected_user_id)}
                 >
-                  <div className="relative w-14 h-14 bg-gray-100 rounded-full overflow-hidden border-2 border-green-300 flex-shrink-0">
-                    {request.user_avatar ? (
-                      <img src={request.user_avatar} alt={request.user_name} className="w-full h-full object-cover" />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center bg-green-500 text-white font-bold">
-                        {request.user_name.charAt(0)}
+                  <div className="relative flex-shrink-0">
+                    <div className="w-14 h-14 bg-gray-100 rounded-full overflow-hidden border-2 border-green-300">
+                      {request.user_avatar ? (
+                        <img src={request.user_avatar} alt={request.user_name} className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center bg-green-500 text-white font-bold">
+                          {request.user_name.charAt(0)}
+                        </div>
+                      )}
+                    </div>
+                    {request.user_status === 'verified' && (
+                      <div className="absolute -bottom-1 -right-1 z-10">
+                        <VerifiedBadge size={14} />
                       </div>
                     )}
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-1.5">
                       <h3 className="font-bold text-gray-900 text-sm truncate">{request.user_name}</h3>
+                      {request.user_status === 'verified' && <VerifiedBadge size={10} />}
                       <span className="inline-flex items-center px-1 py-0.5 text-xs bg-yellow-100 text-yellow-700 font-bold rounded border border-yellow-300 flex-shrink-0">
                         Pending
                       </span>
