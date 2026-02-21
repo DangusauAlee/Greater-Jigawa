@@ -11,6 +11,8 @@ import Marketplace from './pages/Marketplace';
 import MarketplaceDetail from './pages/MarketplaceDetail';
 import MarketplaceEdit from './pages/MarketplaceEdit';
 import Explore from './pages/Explore';
+import Businesses from './pages/Businesses';
+import BusinessDetails from './pages/BusinessDetails';
 function App() {
   return (
     <BrowserRouter>
@@ -27,6 +29,8 @@ function App() {
             <Route path="/Marketplace/:id" element={<MarketplaceDetail />} />
             <Route path="/Marketplace/edit/:id" element={<MarketplaceEdit />} />
             <Route path="/Explore" element={<Explore />} />
+            <Route path="/Businesses" element={<Businesses />} />
+            <Route path="Business/:id" element={<BusinessDetails />} />
             <Route path="/profile/:id" element={<div>Profile Page</div>} />
             {/* Add other routes as needed */}
           </Routes>

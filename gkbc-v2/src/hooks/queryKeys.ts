@@ -41,3 +41,14 @@ export const eventKeys = {
   lists: () => [...eventKeys.all, 'list'] as const,
   list: (filters: any) => [...eventKeys.lists(), filters] as const,
 };
+
+export const businessKeys = {
+  all: ['businesses'] as const,
+  lists: () => [...businessKeys.all, 'list'] as const,
+  list: (filters: Record<string, any>) => [...businessKeys.lists(), filters] as const,
+  details: () => [...businessKeys.all, 'detail'] as const,
+  detail: (id: string) => [...businessKeys.details(), id] as const,
+  categories: () => [...businessKeys.all, 'categories'] as const,
+  locationCounts: () => [...businessKeys.all, 'locationCounts'] as const,
+  userStatus: () => ['userVerificationStatus'] as const,
+};
