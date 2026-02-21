@@ -301,7 +301,7 @@ const SignUp: React.FC = () => {
             last_name: formData.lastName.trim(),
             phone: formData.phone.trim() || null,
           },
-          emailRedirectTo: `${window.location.origin}/login`,
+          emailRedirectTo: `${window.location.origin}/`,
         },
       });
       

@@ -29,3 +29,15 @@ export const marketplaceKeys = {
   favorites: (userId: string) => [...marketplaceKeys.all, 'favorites', userId] as const,
   reviews: (listingId: string) => [...marketplaceKeys.all, 'reviews', listingId] as const,
 };
+
+export const jobKeys = {
+  all: ['jobs'] as const,
+  lists: () => [...jobKeys.all, 'list'] as const,
+  list: (filters: any) => [...jobKeys.lists(), filters] as const,
+};
+
+export const eventKeys = {
+  all: ['events'] as const,
+  lists: () => [...eventKeys.all, 'list'] as const,
+  list: (filters: any) => [...eventKeys.lists(), filters] as const,
+};

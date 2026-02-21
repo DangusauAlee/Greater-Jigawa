@@ -10,7 +10,7 @@ import ResetPassword from './pages/ResetPassword';
 import Marketplace from './pages/Marketplace';
 import MarketplaceDetail from './pages/MarketplaceDetail';
 import MarketplaceEdit from './pages/MarketplaceEdit';
-
+import Explore from './pages/Explore';
 function App() {
   return (
     <BrowserRouter>
@@ -25,7 +25,8 @@ function App() {
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/Marketplace" element={<Marketplace />} />
             <Route path="/Marketplace/:id" element={<MarketplaceDetail />} />
-            <Route path="/marketplace/edit/:id" element={<MarketplaceEdit />} />
+            <Route path="/Marketplace/edit/:id" element={<MarketplaceEdit />} />
+            <Route path="/Explore" element={<Explore />} />
             <Route path="/profile/:id" element={<div>Profile Page</div>} />
             {/* Add other routes as needed */}
           </Routes>
