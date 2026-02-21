@@ -19,3 +19,13 @@ export const feedKeys = {
   detail: (id: string) => [...feedKeys.details(), id] as const,
   comments: (postId: string) => ['comments', postId] as const,
 };
+
+export const marketplaceKeys = {
+  all: ['marketplace'] as const,
+  listings: (filters?: any) => 
+    [...marketplaceKeys.all, 'listings', filters] as const,
+  listing: (id: string) => [...marketplaceKeys.all, 'listing', id] as const,
+  myListings: (userId: string) => [...marketplaceKeys.all, 'myListings', userId] as const,
+  favorites: (userId: string) => [...marketplaceKeys.all, 'favorites', userId] as const,
+  reviews: (listingId: string) => [...marketplaceKeys.all, 'reviews', listingId] as const,
+};
