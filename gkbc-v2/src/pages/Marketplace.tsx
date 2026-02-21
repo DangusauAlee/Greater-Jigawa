@@ -319,7 +319,7 @@ const Marketplace: React.FC = () => {
       {activeTab === 'browse' && isVerified && (
         <button
           onClick={() => setShowCreateModal(true)}
-          className="fixed bottom-4 right-4 bg-green-600 text-white p-3 rounded-full shadow-lg hover:bg-green-700 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
+          className="fixed bottom-20 right-4 bg-green-600 text-white p-3 rounded-full shadow-lg hover:bg-green-700 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
           aria-label="Create listing"
         >
           <Plus size={20} />

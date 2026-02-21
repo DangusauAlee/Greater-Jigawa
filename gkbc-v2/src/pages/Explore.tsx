@@ -329,8 +329,7 @@ const Explore: React.FC = () => {
       {/* Floating Create Button */}
       <button
         onClick={handleCreateClick}
-        className={`fixed bottom-20 right-3 text-white p-3 rounded-full shadow-lg border z-30
-                   min-h-[44px] min-w-[44px] flex items-center justify-center ${
+        className={`fixed bottom-20 right-4 bg-green-600 text-white p-3 rounded-full shadow-lg hover:bg-green-700 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center ${
           isVerified
             ? 'bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 border-green-800'
             : 'bg-gray-400 border-gray-500 cursor-not-allowed'
