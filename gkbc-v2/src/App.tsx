@@ -1,6 +1,11 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import React from 'react';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryProvider } from './Providers/QueryProvider';
 import { AuthProvider } from './contexts/AuthContext';
+import BottomNav from './components/BottomNav';
+import Sidebar from './components/Sidebar';
+import Header from './components/Header';
+
 import Members from './pages/Members';
 import Home from './pages/Home';
 import Signup from './pages/Signup';
@@ -13,26 +18,65 @@ import MarketplaceEdit from './pages/MarketplaceEdit';
 import Explore from './pages/Explore';
 import Businesses from './pages/Businesses';
 import BusinessDetails from './pages/BusinessDetails';
+
+// Layout wrapper for web/mobile responsiveness
+const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  return (
+    <div className="min-h-screen w-full flex bg-gray-50">
+      {/* Desktop Sidebar - FIXED */}
+      <aside className="hidden md:block md:w-64 md:fixed md:top-0 md:left-0 md:h-screen bg-white border-r z-40">
+        <Sidebar />
+      </aside>
+
+      {/* Main content area */}
+      <div className="flex-1 flex flex-col min-w-0 w-full md:ml-64">
+        {/* Header is fixed - sits outside normal flow */}
+        <Header />
+
+        {/* Add margin-top to this container instead of padding */}
+        <div className="mt-20 flex-1 flex flex-col">
+          {/* Main content */}
+          <main className="flex-1 overflow-y-auto p-4 pb-24 md:pb-4 w-full">
+            <div className="w-full max-w-full mx-auto">
+              {children}
+            </div>
+          </main>
+
+          {/* Bottom nav - FIXED on mobile */}
+          <div className="md:hidden fixed bottom-0 left-0 right-0 z-50">
+            <BottomNav />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
         <QueryProvider>
           <Routes>
-            <Route path="Members" element={<Members />} />
-            <Route path="Home" element={<Home />} />
+            {/* Public / Auth pages - no layout */}
             <Route path="/" element={<Login />} />
             <Route path="/Signup" element={<Signup />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password" element={<ResetPassword />} />
-            <Route path="/Marketplace" element={<Marketplace />} />
-            <Route path="/Marketplace/:id" element={<MarketplaceDetail />} />
-            <Route path="/Marketplace/edit/:id" element={<MarketplaceEdit />} />
-            <Route path="/Explore" element={<Explore />} />
-            <Route path="/Businesses" element={<Businesses />} />
-            <Route path="Business/:id" element={<BusinessDetails />} />
-            <Route path="/profile/:id" element={<div>Profile Page</div>} />
-            {/* Add other routes as needed */}
+
+            {/* Protected pages - with layout */}
+            <Route path="/Home" element={<Layout><Home /></Layout>} />
+            <Route path="/Members" element={<Layout><Members /></Layout>} />
+            <Route path="/Marketplace" element={<Layout><Marketplace /></Layout>} />
+            <Route path="/Marketplace/:id" element={<Layout><MarketplaceDetail /></Layout>} />
+            <Route path="/Marketplace/edit/:id" element={<Layout><MarketplaceEdit /></Layout>} />
+            <Route path="/Explore" element={<Layout><Explore /></Layout>} />
+            <Route path="/Businesses" element={<Layout><Businesses /></Layout>} />
+            <Route path="/Business/:id" element={<Layout><BusinessDetails /></Layout>} />
+            <Route path="/profile/:id" element={<Layout><div>Profile Page</div></Layout>} />
+
+            {/* Fallback */}
+            <Route path="*" element={<Navigate to="/Home" replace />} />
           </Routes>
         </QueryProvider>
       </AuthProvider>
