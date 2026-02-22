@@ -1,10 +1,12 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { UserPlus, UserCheck } from 'lucide-react';
+import { UserCheck, UserPlus } from 'lucide-react';
 import { connectionsService } from '../../services/supabase/connections';
 import { MemberCard } from '../members/MemberCard';
-// import VerifiedBadge from '../VerifiedBadge'; // not used – removed
+import VerifiedBadge from '../VerifiedBadge';
+import { connectionKeys } from '../../hooks/queryKeys';
+import { formatTimeAgo } from '../../utils/formatters';
 
 interface UserConnectionsListProps {
   userId: string;
@@ -15,20 +17,22 @@ export const UserConnectionsList: React.FC<UserConnectionsListProps> = ({ userId
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
+  // Fetch the profile owner's friends
   const { data: connections = [], isLoading } = useQuery({
     queryKey: ['user-friends', userId],
-    queryFn: () => connectionsService.getFriendsList(userId), // now exists
+    queryFn: () => connectionsService.getFriendsList(userId),
   });
 
+  // Fetch viewer's own friends to know which ones are already connected
   const { data: myFriends = [] } = useQuery({
-    queryKey: ['friends'],
+    queryKey: connectionKeys.friends(),
     queryFn: () => connectionsService.getFriends(),
   });
 
   const sendRequestMutation = useMutation({
     mutationFn: (targetUserId: string) => connectionsService.sendConnectionRequest(targetUserId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['friends'] });
+      queryClient.invalidateQueries({ queryKey: connectionKeys.friends() });
     },
   });
 
@@ -36,7 +40,14 @@ export const UserConnectionsList: React.FC<UserConnectionsListProps> = ({ userId
     return `${firstName?.charAt(0) || ''}${lastName?.charAt(0) || ''}`.toUpperCase() || 'U';
   };
 
-  if (isLoading) return <div className="text-center py-8">Loading connections...</div>;
+  const handleProfileClick = (memberId: string) => {
+    navigate(`/profile/${memberId}`);
+  };
+
+  if (isLoading) {
+    return <div className="text-center py-8">Loading connections...</div>;
+  }
+
   if (connections.length === 0) {
     return (
       <div className="text-center py-12">
@@ -56,15 +67,17 @@ export const UserConnectionsList: React.FC<UserConnectionsListProps> = ({ userId
         const isSelf = conn.user_id === viewerId;
         const connectionButton = isSelf ? null : (
           <button
-            disabled={isAlreadyConnected}
+            disabled={isAlreadyConnected || sendRequestMutation.isPending}
             onClick={() => sendRequestMutation.mutate(conn.user_id)}
             className={`w-full py-2 text-xs rounded-lg font-medium min-h-[36px] flex items-center justify-center gap-1 ${
               isAlreadyConnected
                 ? 'bg-green-100 text-green-700 border border-green-300'
-                : 'bg-green-600 text-white hover:bg-blue-700 border border-blue-700'
+                : 'bg-green-600 text-white hover:bg-green-700 border border-green-700'
             }`}
           >
-            {isAlreadyConnected ? (
+            {sendRequestMutation.isPending ? (
+              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+            ) : isAlreadyConnected ? (
               <>
                 <UserCheck size={14} />
                 <span>Connected</span>
@@ -77,6 +90,7 @@ export const UserConnectionsList: React.FC<UserConnectionsListProps> = ({ userId
             )}
           </button>
         );
+
         return (
           <MemberCard
             key={conn.user_id}
@@ -96,7 +110,7 @@ export const UserConnectionsList: React.FC<UserConnectionsListProps> = ({ userId
             connectionButton={connectionButton}
             onProfileClick={(id, e) => {
               if ((e.target as HTMLElement).closest('button')) return;
-              navigate(`/profile/${id}`);
+              handleProfileClick(id);
             }}
             getUserInitials={getUserInitials}
           />

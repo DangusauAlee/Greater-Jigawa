@@ -1,23 +1,24 @@
 import React, { useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useQueryClient,useMutation } from '@tanstack/react-query';
+import { useQueryClient, useMutation } from '@tanstack/react-query';
 import { ChevronLeft, MoreVertical, Edit3, Share2, LogOut, AlertCircle, UserPlus, UserMinus, Check, Clock, X } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import { useProfile, useProfilePosts, profileKeys } from '../hooks/useProfile'; // added profileKeys
+import { useProfile, useProfilePosts, profileKeys } from '../hooks/useProfile';
 import { useConnectionsData } from '../hooks/useConnectionsData';
 import { useConnectionMutations } from '../hooks/useConnectionMutations';
+import { connectionKeys } from '../hooks/queryKeys';
 import { profileService } from '../services/supabase/profile';
+import { connectionsService } from '../services/supabase/connections';
 import { ProfileHeader } from '../components/profile/ProfileHeader';
 import { ProfileStats } from '../components/profile/ProfileStats';
 import { ProfileTabs } from '../components/profile/ProfileTabs';
 import { EditModal } from '../components/profile/EditModal';
 import { ConfirmationDialog } from '../components/shared/ConfirmationDialogue';
 import { FeedbackToast } from '../components/shared/FeedbackToast';
-import { connectionsService } from '../services/supabase/connections';
 
 const Profile: React.FC = () => {
   const { userId } = useParams<{ userId: string }>();
-console.log('Profile rendered with userId param:', userId);
+  console.log('Profile rendered with userId param:', userId);
   const navigate = useNavigate();
   const { user } = useAuth();
   const viewerId = user?.id;
@@ -40,7 +41,6 @@ console.log('Profile rendered with userId param:', userId);
   const headerInputRef = useRef<HTMLInputElement>(null);
 
   const profileUserId = userId || 'current';
-  // All hooks called unconditionally – before any early return
   console.log('userId param:', userId);
   const { data: profileData, isLoading } = useProfile(profileUserId, viewerId || 'current');
   const profileQueryKey = profileKeys.detail(profileUserId, viewerId!);
@@ -48,15 +48,28 @@ console.log('Profile rendered with userId param:', userId);
   const { receivedRequests, sentRequests, friends } = useConnectionsData('', '', '');
   const mutations = useConnectionMutations('', '', '');
 
-  // Delete post mutation
   const deletePostMutation = useMutation({
-  mutationFn: (postId: string) => profileService.deletePost(postId),
-  onSuccess: () => {
-    queryClient.invalidateQueries({ queryKey: profileKeys.posts(profileUserId, viewerId!) });
-  },
-});
+    mutationFn: (postId: string) => profileService.deletePost(postId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: profileKeys.posts(profileUserId, viewerId!) });
+    },
+  });
 
-  // Now it's safe to check loading state and return skeleton
+  const disconnectMutation = useMutation({
+    mutationFn: async () => {
+      if (!profile) throw new Error('Profile not loaded');
+      await connectionsService.removeConnection(profile.id);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: profileQueryKey });
+      queryClient.invalidateQueries({ queryKey: connectionKeys.all });
+      showNotification('Disconnected', 'success');
+    },
+    onError: (error: any) => {
+      showNotification(error.message || 'Failed to disconnect', 'error');
+    },
+  });
+
   if (isLoading || !profileData?.profile) {
     return <div className="min-h-screen bg-gray-50 animate-pulse" />;
   }
@@ -71,6 +84,7 @@ console.log('Profile rendered with userId param:', userId);
     setTimeout(() => setNotification(null), 3000);
   };
 
+  // Top action button handlers
   const handleConnect = () => {
     setConfirmAction({ type: 'connect', targetId: profile.id, userName: `${profile.first_name} ${profile.last_name}` });
     setShowConfirmModal(true);
@@ -85,10 +99,14 @@ console.log('Profile rendered with userId param:', userId);
   };
 
   const handleAccept = async () => {
+    console.log('handleAccept called');
     const pending = receivedRequests.find(r => r.sender_id === profile.id);
     if (pending) {
+      console.log('Found pending request:', pending.id);
       setConfirmAction({ type: 'accept', targetId: pending.id, userName: `${profile.first_name} ${profile.last_name}` });
       setShowConfirmModal(true);
+    } else {
+      console.log('No pending request found');
     }
   };
 
@@ -98,6 +116,22 @@ console.log('Profile rendered with userId param:', userId);
       setConfirmAction({ type: 'reject', targetId: pending.id, userName: `${profile.first_name} ${profile.last_name}` });
       setShowConfirmModal(true);
     }
+  };
+
+  // Connections tab handlers (receive requestId directly)
+  const handleAcceptRequest = (requestId: string, senderName: string) => {
+    setConfirmAction({ type: 'accept', targetId: requestId, userName: senderName });
+    setShowConfirmModal(true);
+  };
+
+  const handleRejectRequest = (requestId: string, senderName: string) => {
+    setConfirmAction({ type: 'reject', targetId: requestId, userName: senderName });
+    setShowConfirmModal(true);
+  };
+
+  const handleWithdrawRequest = (requestId: string, userName: string) => {
+    setConfirmAction({ type: 'withdraw', targetId: requestId, userName });
+    setShowConfirmModal(true);
   };
 
   const handleDisconnect = () => {
@@ -115,15 +149,17 @@ console.log('Profile rendered with userId param:', userId);
         await mutations.withdrawRequest(confirmAction.targetId);
         showNotification('Request withdrawn', 'success');
       } else if (confirmAction.type === 'accept' && confirmAction.targetId) {
+        console.log('About to accept request:', confirmAction.targetId);
         await mutations.acceptRequest(confirmAction.targetId);
+        console.log('Accept mutation succeeded');
         showNotification('Connection accepted', 'success');
       } else if (confirmAction.type === 'reject' && confirmAction.targetId) {
         await mutations.rejectRequest(confirmAction.targetId);
         showNotification('Request rejected', 'success');
       } else if (confirmAction.type === 'disconnect') {
-        showNotification('Disconnected', 'success');
+        await disconnectMutation.mutateAsync();
       }
-      queryClient.invalidateQueries({ queryKey: profileQueryKey });;
+      queryClient.invalidateQueries({ queryKey: profileQueryKey });
     } catch (error: any) {
       showNotification(error.message || 'Action failed', 'error');
     } finally {
@@ -161,11 +197,11 @@ console.log('Profile rendered with userId param:', userId);
       } else if (confirmAction.type === 'deleteAvatar') {
         await profileService.removeProfileAvatar();
         showNotification('Avatar removed', 'success');
-        queryClient.invalidateQueries({ queryKey: profileQueryKey });;
+        queryClient.invalidateQueries({ queryKey: profileQueryKey });
       } else if (confirmAction.type === 'deleteHeader') {
         await profileService.removeProfileHeader();
         showNotification('Cover photo removed', 'success');
-        queryClient.invalidateQueries({ queryKey: profileQueryKey });;
+        queryClient.invalidateQueries({ queryKey: profileQueryKey });
       }
     } catch (error: any) {
       showNotification(error.message || 'Delete failed', 'error');
@@ -182,7 +218,7 @@ console.log('Profile rendered with userId param:', userId);
       setUploadingAvatar(true);
       await profileService.updateProfileAvatar(file);
       showNotification('Profile picture updated', 'success');
-      queryClient.invalidateQueries({ queryKey: profileQueryKey });;
+      queryClient.invalidateQueries({ queryKey: profileQueryKey });
     } catch (error: any) {
       showNotification(error.message || 'Upload failed', 'error');
     } finally {
@@ -197,7 +233,7 @@ console.log('Profile rendered with userId param:', userId);
       setUploadingHeader(true);
       await profileService.updateProfileHeader(file);
       showNotification('Cover photo updated', 'success');
-      queryClient.invalidateQueries({ queryKey: profileQueryKey });;
+      queryClient.invalidateQueries({ queryKey: profileQueryKey });
     } catch (error: any) {
       showNotification(error.message || 'Upload failed', 'error');
     } finally {
@@ -285,7 +321,6 @@ console.log('Profile rendered with userId param:', userId);
       <input type="file" ref={avatarInputRef} onChange={handleAvatarUpload} accept="image/*" className="hidden" />
       <input type="file" ref={headerInputRef} onChange={handleHeaderUpload} accept="image/*" className="hidden" />
 
-      {/* Header */}
       <div className="sticky top-0 bg-white/95 backdrop-blur-sm border-b border-gray-200 z-30">
         <div className="flex items-center justify-between px-4 py-3">
           <button onClick={() => navigate(-1)} className="w-10 h-10 flex items-center justify-center text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-full border border-gray-200">
@@ -354,25 +389,25 @@ console.log('Profile rendered with userId param:', userId);
 
       <div className="px-4 mt-8 mb-6">{renderPrimaryActionButton()}</div>
 
-      {/* Render ProfileTabs with new props */}
+      {/* Fixed: Use the request-specific handlers for the connections tab */}
       <ProfileTabs
-  activeTab={activeTab}
-  onTabChange={setActiveTab}
-  profileUserId={profile.id}
-  viewerId={viewerId!}
-  isOwner={isOwner}
-  isConnected={isConnected}
-  posts={posts}
-  receivedRequests={receivedRequests}
-  sentRequests={sentRequests}
-  friends={friends}
-  onAcceptRequest={handleAccept}
-  onRejectRequest={handleReject}
-  onWithdrawRequest={handleWithdraw}
-  connectionsCount={stats?.connections_count ?? 0}
-  postsQueryKey={profileKeys.posts(profileUserId, viewerId!)}
-  onDeletePostMutation={isOwner ? deletePostMutation.mutateAsync : undefined}
-/>
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
+        profileUserId={profile.id}
+        viewerId={viewerId!}
+        isOwner={isOwner}
+        isConnected={isConnected}
+        posts={posts}
+        receivedRequests={receivedRequests}
+        sentRequests={sentRequests}
+        friends={friends}
+        onAcceptRequest={handleAcceptRequest}
+        onRejectRequest={handleRejectRequest}
+        onWithdrawRequest={handleWithdrawRequest}
+        connectionsCount={stats?.connections_count ?? 0}
+        postsQueryKey={profileKeys.posts(profileUserId, viewerId!)}
+        onDeletePostMutation={isOwner ? deletePostMutation.mutateAsync : undefined}
+      />
 
       <ConfirmationDialog
         isOpen={showConfirmModal}
@@ -413,7 +448,6 @@ console.log('Profile rendered with userId param:', userId);
         isDanger={confirmAction?.type === 'reject' || confirmAction?.type === 'disconnect' || confirmAction?.type?.startsWith('delete')}
       />
 
-      {/* Share Menu */}
       {showShareMenu && (
         <>
           <div className="fixed inset-0 bg-black/50 z-40 backdrop-blur-sm" onClick={() => setShowShareMenu(false)} />
@@ -441,7 +475,7 @@ console.log('Profile rendered with userId param:', userId);
           try {
             await profileService.updateProfileData(updatedData);
             showNotification('Profile updated', 'success');
-            queryClient.invalidateQueries({ queryKey: profileQueryKey });;
+            queryClient.invalidateQueries({ queryKey: profileQueryKey });
             setShowEditModal(false);
           } catch (error: any) {
             showNotification(error.message || 'Update failed', 'error');
