@@ -1,4 +1,4 @@
-import { supabase } from '../../services/supabase'; // adjust path as needed
+import { supabase } from '../supabase'; // adjust path as needed
 
 export interface ConnectionRequest {
   id: string;
@@ -102,6 +102,13 @@ export const connectionsService = {
 
   async getFriends(): Promise<Friend[]> {
     const { data, error } = await supabase.rpc('get_friends_list');
+    if (error) throw error;
+    return data || [];
+  },
+
+  // NEW: Get another user's friends list
+  async getFriendsList(userId: string): Promise<Friend[]> {
+    const { data, error } = await supabase.rpc('get_user_friends', { p_user_id: userId });
     if (error) throw error;
     return data || [];
   },

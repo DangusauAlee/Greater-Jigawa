@@ -220,4 +220,45 @@ export const LOCATION_AXIS = [
   'Others'
 ] as const;
 
+// Profile related
+export interface Profile {
+  id: string;
+  first_name: string;
+  last_name: string;
+  email?: string;
+  avatar_url?: string;
+  header_image_url?: string;
+  business_name?: string;
+  business_type?: string;
+  market_area?: string;
+  location?: string;
+  bio?: string;
+  phone?: string;
+  address?: string;
+  website?: string;
+  user_status: 'member' | 'verified';
+  role?: string;
+  created_at: string;
+  updated_at?: string;
+  last_seen?: string;
+}
+
+export interface ProfileStats {
+  posts_count: number;
+  connections_count: number;
+}
+
+export interface ProfileRelationship {
+  is_owner: boolean;
+  is_connected: boolean;
+  connection_status?: 'pending' | 'connected' | null;
+  is_sender?: boolean;
+}
+
+export interface ProfileData {
+  profile: Profile;
+  stats: ProfileStats;
+  relationship: ProfileRelationship;
+}
+
 // You can add other shared types here as needed

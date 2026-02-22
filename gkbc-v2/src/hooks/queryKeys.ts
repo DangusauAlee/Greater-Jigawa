@@ -52,3 +52,9 @@ export const businessKeys = {
   locationCounts: () => [...businessKeys.all, 'locationCounts'] as const,
   userStatus: () => ['userVerificationStatus'] as const,
 };
+
+export const profileKeys = {
+  all: ['profiles'] as const,
+  detail: (userId: string) => [...profileKeys.all, userId] as const,
+  posts: (userId: string) => [...profileKeys.all, userId, 'posts'] as const,
+};

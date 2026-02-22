@@ -18,6 +18,7 @@ import MarketplaceEdit from './pages/MarketplaceEdit';
 import Explore from './pages/Explore';
 import Businesses from './pages/Businesses';
 import BusinessDetails from './pages/BusinessDetails';
+import Profile from './pages/Profile';
 
 // Layout wrapper for web/mobile responsiveness
 const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -73,7 +74,7 @@ function App() {
             <Route path="/Explore" element={<Layout><Explore /></Layout>} />
             <Route path="/Businesses" element={<Layout><Businesses /></Layout>} />
             <Route path="/Business/:id" element={<Layout><BusinessDetails /></Layout>} />
-            <Route path="/profile/:id" element={<Layout><div>Profile Page</div></Layout>} />
+            <Route path="/Profile/:userid?" element={<Layout><Profile /></Layout>} />
 
             {/* Fallback */}
             <Route path="*" element={<Navigate to="/Home" replace />} />
