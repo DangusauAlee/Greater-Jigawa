@@ -5,6 +5,7 @@ export const profileKeys = {
   all: ['profiles'] as const,
   detail: (profileUserId: string, viewerId: string) => [...profileKeys.all, profileUserId, viewerId] as const,
   posts: (profileUserId: string, viewerId: string) => [...profileKeys.all, profileUserId, viewerId, 'posts'] as const,
+  comments: (profileUserId: string, postId: string) => [...profileKeys.all, profileUserId, 'posts', postId, 'comments'] as const,
 };
 
 export const useProfile = (profileUserId: string, viewerId: string) => {

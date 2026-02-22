@@ -1,9 +1,9 @@
 import React, { useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useQueryClient } from '@tanstack/react-query';
+import { useQueryClient,useMutation } from '@tanstack/react-query';
 import { ChevronLeft, MoreVertical, Edit3, Share2, LogOut, AlertCircle, UserPlus, UserMinus, Check, Clock, X } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import { useProfile, useProfilePosts } from '../hooks/useProfile';
+import { useProfile, useProfilePosts, profileKeys } from '../hooks/useProfile'; // added profileKeys
 import { useConnectionsData } from '../hooks/useConnectionsData';
 import { useConnectionMutations } from '../hooks/useConnectionMutations';
 import { profileService } from '../services/supabase/profile';
@@ -13,9 +13,11 @@ import { ProfileTabs } from '../components/profile/ProfileTabs';
 import { EditModal } from '../components/profile/EditModal';
 import { ConfirmationDialog } from '../components/shared/ConfirmationDialogue';
 import { FeedbackToast } from '../components/shared/FeedbackToast';
+import { connectionsService } from '../services/supabase/connections';
 
 const Profile: React.FC = () => {
   const { userId } = useParams<{ userId: string }>();
+console.log('Profile rendered with userId param:', userId);
   const navigate = useNavigate();
   const { user } = useAuth();
   const viewerId = user?.id;
@@ -39,10 +41,20 @@ const Profile: React.FC = () => {
 
   const profileUserId = userId || 'current';
   // All hooks called unconditionally – before any early return
+  console.log('userId param:', userId);
   const { data: profileData, isLoading } = useProfile(profileUserId, viewerId || 'current');
+  const profileQueryKey = profileKeys.detail(profileUserId, viewerId!);
   const { data: posts = [] } = useProfilePosts(profileUserId, viewerId || 'current');
   const { receivedRequests, sentRequests, friends } = useConnectionsData('', '', '');
   const mutations = useConnectionMutations('', '', '');
+
+  // Delete post mutation
+  const deletePostMutation = useMutation({
+  mutationFn: (postId: string) => profileService.deletePost(postId),
+  onSuccess: () => {
+    queryClient.invalidateQueries({ queryKey: profileKeys.posts(profileUserId, viewerId!) });
+  },
+});
 
   // Now it's safe to check loading state and return skeleton
   if (isLoading || !profileData?.profile) {
@@ -52,6 +64,7 @@ const Profile: React.FC = () => {
   const { profile, stats, relationship } = profileData;
   const isOwner = !!relationship?.is_owner;
   const isConnected = !!relationship?.is_connected;
+  console.log('isOwner:', isOwner, 'isConnected:', isConnected, 'relationship:', relationship);
 
   const showNotification = (message: string, type: 'success' | 'error') => {
     setNotification({ message, type });
@@ -110,7 +123,7 @@ const Profile: React.FC = () => {
       } else if (confirmAction.type === 'disconnect') {
         showNotification('Disconnected', 'success');
       }
-      queryClient.invalidateQueries({ queryKey: ['profile', profileUserId, viewerId] });
+      queryClient.invalidateQueries({ queryKey: profileQueryKey });;
     } catch (error: any) {
       showNotification(error.message || 'Action failed', 'error');
     } finally {
@@ -144,15 +157,15 @@ const Profile: React.FC = () => {
       if (confirmAction.type === 'deletePost' && confirmAction.targetId) {
         await profileService.deletePost(confirmAction.targetId);
         showNotification('Post deleted', 'success');
-        queryClient.invalidateQueries({ queryKey: ['profile-posts', profileUserId, viewerId] });
+        queryClient.invalidateQueries({ queryKey: profileKeys.posts(profileUserId, viewerId!) });
       } else if (confirmAction.type === 'deleteAvatar') {
         await profileService.removeProfileAvatar();
         showNotification('Avatar removed', 'success');
-        queryClient.invalidateQueries({ queryKey: ['profile', profileUserId, viewerId] });
+        queryClient.invalidateQueries({ queryKey: profileQueryKey });;
       } else if (confirmAction.type === 'deleteHeader') {
         await profileService.removeProfileHeader();
         showNotification('Cover photo removed', 'success');
-        queryClient.invalidateQueries({ queryKey: ['profile', profileUserId, viewerId] });
+        queryClient.invalidateQueries({ queryKey: profileQueryKey });;
       }
     } catch (error: any) {
       showNotification(error.message || 'Delete failed', 'error');
@@ -169,7 +182,7 @@ const Profile: React.FC = () => {
       setUploadingAvatar(true);
       await profileService.updateProfileAvatar(file);
       showNotification('Profile picture updated', 'success');
-      queryClient.invalidateQueries({ queryKey: ['profile', profileUserId, viewerId] });
+      queryClient.invalidateQueries({ queryKey: profileQueryKey });;
     } catch (error: any) {
       showNotification(error.message || 'Upload failed', 'error');
     } finally {
@@ -184,7 +197,7 @@ const Profile: React.FC = () => {
       setUploadingHeader(true);
       await profileService.updateProfileHeader(file);
       showNotification('Cover photo updated', 'success');
-      queryClient.invalidateQueries({ queryKey: ['profile', profileUserId, viewerId] });
+      queryClient.invalidateQueries({ queryKey: profileQueryKey });;
     } catch (error: any) {
       showNotification(error.message || 'Upload failed', 'error');
     } finally {
@@ -204,7 +217,7 @@ const Profile: React.FC = () => {
       return (
         <button
           onClick={handleEditProfile}
-          className="w-full max-w-xs mx-auto py-4 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg hover:from-blue-700 hover:to-blue-800 active:scale-[0.98] transition-all min-h-[52px] border border-blue-800"
+          className="w-full max-w-xs mx-auto py-4 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg hover:from-green-700 hover:to-green-800 active:scale-[0.98] transition-all min-h-[52px] border border-green-800"
         >
           <Edit3 size={20} />
           Edit Profile
@@ -341,24 +354,25 @@ const Profile: React.FC = () => {
 
       <div className="px-4 mt-8 mb-6">{renderPrimaryActionButton()}</div>
 
+      {/* Render ProfileTabs with new props */}
       <ProfileTabs
-        activeTab={activeTab}
-        onTabChange={setActiveTab}
-        profileUserId={profile.id}
-        viewerId={viewerId!}
-        isOwner={isOwner}
-        isConnected={isConnected}
-        posts={posts}
-        receivedRequests={receivedRequests}
-        sentRequests={sentRequests}
-        friends={friends}
-        onAcceptRequest={handleAccept}
-        onRejectRequest={handleReject}
-        onWithdrawRequest={handleWithdraw}
-        onDeletePost={handleDeletePost}
-        isVerified={profile.user_status === 'verified'}
-        connectionsCount={stats?.connections_count ?? 0}
-      />
+  activeTab={activeTab}
+  onTabChange={setActiveTab}
+  profileUserId={profile.id}
+  viewerId={viewerId!}
+  isOwner={isOwner}
+  isConnected={isConnected}
+  posts={posts}
+  receivedRequests={receivedRequests}
+  sentRequests={sentRequests}
+  friends={friends}
+  onAcceptRequest={handleAccept}
+  onRejectRequest={handleReject}
+  onWithdrawRequest={handleWithdraw}
+  connectionsCount={stats?.connections_count ?? 0}
+  postsQueryKey={profileKeys.posts(profileUserId, viewerId!)}
+  onDeletePostMutation={isOwner ? deletePostMutation.mutateAsync : undefined}
+/>
 
       <ConfirmationDialog
         isOpen={showConfirmModal}
@@ -410,7 +424,7 @@ const Profile: React.FC = () => {
                 <X size={20} />
               </button>
             </div>
-            <button onClick={shareProfile} className="w-full py-4 bg-blue-50 text-blue-700 rounded-xl font-bold flex items-center justify-center gap-3 border-2 border-blue-200 hover:bg-blue-100">
+            <button onClick={shareProfile} className="w-full py-4 bg-green-50 text-green-700 rounded-xl font-bold flex items-center justify-center gap-3 border-2 border-green-200 hover:bg-green-100">
               <Share2 size={20} />
               Copy Profile Link
             </button>
@@ -427,7 +441,7 @@ const Profile: React.FC = () => {
           try {
             await profileService.updateProfileData(updatedData);
             showNotification('Profile updated', 'success');
-            queryClient.invalidateQueries({ queryKey: ['profile', profileUserId, viewerId] });
+            queryClient.invalidateQueries({ queryKey: profileQueryKey });;
             setShowEditModal(false);
           } catch (error: any) {
             showNotification(error.message || 'Update failed', 'error');

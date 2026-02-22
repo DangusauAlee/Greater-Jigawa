@@ -74,7 +74,7 @@ function App() {
             <Route path="/Explore" element={<Layout><Explore /></Layout>} />
             <Route path="/Businesses" element={<Layout><Businesses /></Layout>} />
             <Route path="/Business/:id" element={<Layout><BusinessDetails /></Layout>} />
-            <Route path="/Profile/:userid?" element={<Layout><Profile /></Layout>} />
+            <Route path="/Profile/:userId?" element={<Layout><Profile /></Layout>} />
 
             {/* Fallback */}
             <Route path="*" element={<Navigate to="/Home" replace />} />

@@ -243,7 +243,7 @@ export const EditModal: React.FC<EditModalProps> = ({ type, data, isOpen, onClos
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg font-medium hover:from-blue-700 hover:to-blue-800 disabled:opacity-50 transition-all min-h-[44px] border border-blue-800"
+                className="w-full py-3 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-lg font-medium hover:from-green-700 hover:to-green-800 disabled:opacity-50 transition-all min-h-[44px] border border-green-800"
               >
                 {loading ? 'Saving...' : 'Save Profile'}
               </button>

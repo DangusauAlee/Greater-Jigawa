@@ -3,12 +3,16 @@ import { feedService } from '../services/supabase/feed';
 import { feedKeys } from './queryKeys';
 import { useAuth } from '../contexts/AuthContext';
 
-export const useComments = (postId: string) => {
+export const useComments = (
+  postId: string,
+  commentsQueryKey = feedKeys.comments(postId),
+  postsQueryKey = feedKeys.lists()
+) => {
   const queryClient = useQueryClient();
   const { userProfile } = useAuth();
 
   const commentsQuery = useQuery({
-    queryKey: feedKeys.comments(postId),
+    queryKey: commentsQueryKey,
     queryFn: () => feedService.getComments(postId),
     staleTime: 2 * 60 * 1000,
     enabled: !!postId,
@@ -18,11 +22,11 @@ export const useComments = (postId: string) => {
     mutationFn: (content: string) =>
       feedService.addComment(postId, userProfile!.id, content),
     onMutate: async (content) => {
-      await queryClient.cancelQueries({ queryKey: feedKeys.comments(postId) });
-      await queryClient.cancelQueries({ queryKey: feedKeys.lists() });
+      await queryClient.cancelQueries({ queryKey: commentsQueryKey });
+      await queryClient.cancelQueries({ queryKey: postsQueryKey });
 
-      const previousComments = queryClient.getQueryData(feedKeys.comments(postId));
-      const previousFeed = queryClient.getQueryData(feedKeys.lists());
+      const previousComments = queryClient.getQueryData(commentsQueryKey);
+      const previousPosts = queryClient.getQueryData(postsQueryKey);
 
       // Optimistic comment
       const newComment = {
@@ -38,35 +42,50 @@ export const useComments = (postId: string) => {
         has_liked: false,
       };
 
-      queryClient.setQueryData(feedKeys.comments(postId), (old: any[] = []) => [
+      queryClient.setQueryData(commentsQueryKey, (old: any[] = []) => [
         newComment,
         ...old,
       ]);
 
-      // Optimistically increment comment count in feed
-      queryClient.setQueryData(feedKeys.lists(), (old: any) => {
+      // Optimistically increment comment count in posts – handle both infinite and regular queries
+      queryClient.setQueryData(postsQueryKey, (old: any) => {
         if (!old) return old;
-        return {
-          ...old,
-          pages: old.pages.map((page: any[]) =>
-            page.map((post) =>
-              post.id === postId
-                ? { ...post, comments_count: post.comments_count + 1 }
-                : post
-            )
-          ),
-        };
+
+        // Handle infinite query structure (feed)
+        if (old.pages && Array.isArray(old.pages)) {
+          return {
+            ...old,
+            pages: old.pages.map((page: any[]) =>
+              page.map((post) =>
+                post.id === postId
+                  ? { ...post, comments_count: post.comments_count + 1 }
+                  : post
+              )
+            ),
+          };
+        }
+
+        // Handle regular array (profile)
+        if (Array.isArray(old)) {
+          return old.map((post) =>
+            post.id === postId
+              ? { ...post, comments_count: post.comments_count + 1 }
+              : post
+          );
+        }
+
+        return old;
       });
 
-      return { previousComments, previousFeed };
+      return { previousComments, previousPosts };
     },
     onError: (err, content, context) => {
-      queryClient.setQueryData(feedKeys.comments(postId), context?.previousComments);
-      queryClient.setQueryData(feedKeys.lists(), context?.previousFeed);
+      queryClient.setQueryData(commentsQueryKey, context?.previousComments);
+      queryClient.setQueryData(postsQueryKey, context?.previousPosts);
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: feedKeys.comments(postId) });
-      queryClient.invalidateQueries({ queryKey: feedKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: commentsQueryKey });
+      queryClient.invalidateQueries({ queryKey: postsQueryKey });
     },
   });
 

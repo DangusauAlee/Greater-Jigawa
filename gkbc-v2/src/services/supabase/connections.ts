@@ -134,6 +134,13 @@ export const connectionsService = {
     if (error) throw error;
   },
 
+  async removeConnection(otherUserId: string): Promise<void> {
+  const { error } = await supabase.rpc('remove_connection', {
+    p_other_user_id: otherUserId,
+  });
+  if (error) throw error;
+},
+
   async getConnectionStatus(otherUserId: string): Promise<string> {
     const { data, error } = await supabase.rpc('get_connection_status', {
       p_other_user_id: otherUserId,

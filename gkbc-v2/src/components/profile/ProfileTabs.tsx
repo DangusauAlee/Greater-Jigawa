@@ -3,8 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import { UserCheck } from 'lucide-react';
 import { ConnectionsTab } from '../members/ConnectionsTab';
 import { UserConnectionsList } from './UserConnectionsList';
-import { PostCard } from './PostCard';
+import { PostCard } from '../feed/PostCard'; // import from feed
 import { formatTimeAgo } from '../../utils/formatters';
+import { profileKeys } from '../../hooks/useProfile';
 
 interface ProfileTabsProps {
   activeTab: string;
@@ -20,9 +21,10 @@ interface ProfileTabsProps {
   onAcceptRequest: (requestId: string, senderName: string) => void;
   onRejectRequest: (requestId: string, senderName: string) => void;
   onWithdrawRequest: (requestId: string, userName: string) => void;
-  onDeletePost: (post: any) => void;
-  isVerified: boolean;
   connectionsCount: number;
+  // New props for enhanced PostCard
+  postsQueryKey: any;
+  onDeletePostMutation?: (postId: string) => Promise<any>;
 }
 
 export const ProfileTabs: React.FC<ProfileTabsProps> = ({
@@ -39,9 +41,9 @@ export const ProfileTabs: React.FC<ProfileTabsProps> = ({
   onAcceptRequest,
   onRejectRequest,
   onWithdrawRequest,
-  onDeletePost,
-  isVerified,
   connectionsCount,
+  postsQueryKey,
+  onDeletePostMutation,
 }) => {
   const navigate = useNavigate();
 
@@ -74,9 +76,9 @@ export const ProfileTabs: React.FC<ProfileTabsProps> = ({
           <PostCard
             key={post.id}
             post={post}
-            isOwner={isOwner}
-            onDelete={() => onDeletePost(post)}
-            isVerified={isVerified}
+            postsQueryKey={postsQueryKey}
+            commentsQueryKey={profileKeys.comments(profileUserId, post.id)}
+            onDelete={onDeletePostMutation}
           />
         ))}
       </div>
@@ -120,11 +122,11 @@ export const ProfileTabs: React.FC<ProfileTabsProps> = ({
             key={tab}
             onClick={() => onTabChange(tab)}
             className={`flex-1 py-4 text-sm font-medium capitalize transition-all relative ${
-              activeTab === tab ? 'text-blue-600 bg-white' : 'text-gray-500 hover:text-gray-700'
+              activeTab === tab ? 'text-green-600 bg-white' : 'text-gray-500 hover:text-gray-700'
             }`}
           >
             {tab}
-            {activeTab === tab && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600" />}
+            {activeTab === tab && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-green-600" />}
           </button>
         ))}
       </div>

@@ -159,9 +159,21 @@ const Members: React.FC = () => {
   };
 
   const handleProfileClick = (memberId: string, e: React.MouseEvent) => {
-    if ((e.target as HTMLElement).closest('button')) return;
+  console.log('handleProfileClick called with memberId:', memberId);
+  console.log('Event target:', e.target);
+  const button = (e.target as HTMLElement).closest('button');
+  if (button) {
+    console.log('Click on button, aborting navigation');
+    return;
+  }
+  console.log('Current path before navigate:', window.location.pathname);
+  try {
     navigate(`/profile/${memberId}`);
-  };
+    console.log('navigate executed, expected new URL:', `/profile/${memberId}`);
+  } catch (error) {
+    console.error('Navigation error:', error);
+  }
+};
 
   const getUserInitials = (firstName?: string, lastName?: string): string => {
     const first = firstName?.charAt(0) || '';
@@ -492,7 +504,7 @@ const Members: React.FC = () => {
             onAccept={handleAcceptRequest}
             onReject={handleRejectRequest}
             onWithdraw={handleWithdrawRequest}
-            onProfileClick={(userId) => navigate(`/profile/${userId}`)}
+            onProfileClick={(userId) => navigate(`/Profile/${userId}`)}
             formatTimeAgo={formatTimeAgo}
           />
         )}

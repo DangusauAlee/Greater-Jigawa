@@ -3,82 +3,120 @@ import { feedService } from '../services/supabase/feed';
 import { feedKeys } from './queryKeys';
 import { useAuth } from '../contexts/AuthContext';
 
-export const useLikeShare = () => {
+export const useLikeShare = (postsQueryKey = feedKeys.lists()) => {
   const queryClient = useQueryClient();
   const { userProfile } = useAuth();
 
   const likeMutation = useMutation({
     mutationFn: (postId: string) => feedService.toggleLike(postId, userProfile!.id),
     onMutate: async (postId) => {
-      await queryClient.cancelQueries({ queryKey: feedKeys.lists() });
+      await queryClient.cancelQueries({ queryKey: postsQueryKey });
 
-      const previousFeed = queryClient.getQueryData(feedKeys.lists());
+      const previousData = queryClient.getQueryData(postsQueryKey);
 
-      // Optimistic update
-      queryClient.setQueryData(feedKeys.lists(), (old: any) => {
+      // Optimistic update – handle both infinite and regular queries
+      queryClient.setQueryData(postsQueryKey, (old: any) => {
         if (!old) return old;
-        return {
-          ...old,
-          pages: old.pages.map((page: any[]) =>
-            page.map((post) =>
-              post.id === postId
-                ? {
-                    ...post,
-                    has_liked: !post.has_liked,
-                    likes_count: post.has_liked
-                      ? post.likes_count - 1
-                      : post.likes_count + 1,
-                  }
-                : post
-            )
-          ),
-        };
+
+        if (old.pages && Array.isArray(old.pages)) {
+          return {
+            ...old,
+            pages: old.pages.map((page: any[]) =>
+              page.map((post) =>
+                post.id === postId
+                  ? {
+                      ...post,
+                      has_liked: !post.has_liked,
+                      likes_count: post.has_liked
+                        ? post.likes_count - 1
+                        : post.likes_count + 1,
+                    }
+                  : post
+              )
+            ),
+          };
+        }
+
+        if (Array.isArray(old)) {
+          return old.map((post) =>
+            post.id === postId
+              ? {
+                  ...post,
+                  has_liked: !post.has_liked,
+                  likes_count: post.has_liked
+                    ? post.likes_count - 1
+                    : post.likes_count + 1,
+                }
+              : post
+          );
+        }
+
+        return old;
       });
 
-      return { previousFeed };
+      return { previousData };
     },
     onError: (err, postId, context) => {
-      queryClient.setQueryData(feedKeys.lists(), context?.previousFeed);
+      queryClient.setQueryData(postsQueryKey, context?.previousData);
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: feedKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: postsQueryKey });
     },
   });
 
   const shareMutation = useMutation({
     mutationFn: (postId: string) => feedService.sharePost(postId, userProfile!.id),
     onMutate: async (postId) => {
-      await queryClient.cancelQueries({ queryKey: feedKeys.lists() });
+      await queryClient.cancelQueries({ queryKey: postsQueryKey });
 
-      const previousFeed = queryClient.getQueryData(feedKeys.lists());
+      const previousData = queryClient.getQueryData(postsQueryKey);
 
-      queryClient.setQueryData(feedKeys.lists(), (old: any) => {
+      queryClient.setQueryData(postsQueryKey, (old: any) => {
         if (!old) return old;
-        return {
-          ...old,
-          pages: old.pages.map((page: any[]) =>
-            page.map((post) =>
-              post.id === postId
-                ? {
-                    ...post,
-                    has_shared: !post.has_shared,
-                    shares_count: post.has_shared
-                      ? post.shares_count - 1
-                      : post.shares_count + 1,
-                  }
-                : post
-            )
-          ),
-        };
+
+        if (old.pages && Array.isArray(old.pages)) {
+          return {
+            ...old,
+            pages: old.pages.map((page: any[]) =>
+              page.map((post) =>
+                post.id === postId
+                  ? {
+                      ...post,
+                      has_shared: !post.has_shared,
+                      shares_count: post.has_shared
+                        ? post.shares_count - 1
+                        : post.shares_count + 1,
+                    }
+                  : post
+              )
+            ),
+          };
+        }
+
+        if (Array.isArray(old)) {
+          return old.map((post) =>
+            post.id === postId
+              ? {
+                  ...post,
+                  has_shared: !post.has_shared,
+                  shares_count: post.has_shared
+                    ? post.shares_count - 1
+                    : post.shares_count + 1,
+                }
+              : post
+          );
+        }
+
+        return old;
       });
 
-      return { previousFeed };
+      return { previousData };
     },
     onError: (err, postId, context) => {
-      queryClient.setQueryData(feedKeys.lists(), context?.previousFeed);
+      queryClient.setQueryData(postsQueryKey, context?.previousData);
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: feedKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: postsQueryKey });
     },
   });
 
