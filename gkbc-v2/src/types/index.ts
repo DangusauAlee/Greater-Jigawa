@@ -261,4 +261,51 @@ export interface ProfileData {
   relationship: ProfileRelationship;
 }
 
-// You can add other shared types here as needed
+// ==================== MESSAGING TYPES ====================
+
+export type ConversationContext = 'connection' | 'marketplace';
+export type MessageType = 'text' | 'image' | 'video' | 'audio';
+
+export interface Conversation {
+  id: string;
+  conversation_id: string;       // same as id, kept for compatibility
+  other_user_id: string;
+  other_user_name: string;
+  other_user_avatar?: string | null;
+  other_user_status?: 'verified' | 'member' | null;  // <-- add this line
+  last_message?: string;
+  last_message_at: string;       // ISO timestamp
+  unread_count: number;
+  context: ConversationContext;
+  listing_id?: string | null;
+  listing_title?: string | null;
+}
+
+export interface Message {
+  id: string;
+  conversation_id: string;
+  sender_id: string;
+  sender_name: string;
+  sender_avatar?: string | null;
+  type: MessageType;
+  content?: string | null;
+  listing_id?: string | null;
+  listing_title?: string | null;
+  media_url?: string | null;
+  is_read: boolean;
+  created_at: string;            // ISO timestamp
+}
+
+export interface UnreadCounts {
+  total: number;
+  marketplace: number;
+  connection: number;
+}
+
+// For starting a new conversation with a verified connection
+export interface ConnectionUser {
+  id: string;
+  username: string;              // display name (first + last)
+  avatar_url?: string | null;
+}
+

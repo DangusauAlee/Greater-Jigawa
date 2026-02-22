@@ -58,3 +58,16 @@ export const profileKeys = {
   detail: (userId: string) => [...profileKeys.all, userId] as const,
   posts: (userId: string) => [...profileKeys.all, userId, 'posts'] as const,
 };
+
+
+export const messagingKeys = {
+  all: ['messaging'] as const,
+  conversations: (userId?: string, context?: string) =>
+    [...messagingKeys.all, 'conversations', userId, context] as const,
+  conversation: (conversationId: string) =>
+    [...messagingKeys.all, 'conversation', conversationId] as const,
+  messages: (conversationId: string) =>
+    [...messagingKeys.conversation(conversationId), 'messages'] as const,
+  unreadCounts: (userId?: string) =>
+    [...messagingKeys.all, 'unreadCounts', userId] as const,
+};

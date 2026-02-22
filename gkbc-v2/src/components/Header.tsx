@@ -3,6 +3,7 @@ import { MessageCircle, LogOut, Bell, User, HelpCircle } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '../services/supabase';
 import VerifiedBadge from './VerifiedBadge';
+import { useUnreadCounts } from '../hooks/useUnreadCounts';
 
 interface HeaderProps {
   userName?: string;
@@ -25,8 +26,10 @@ const Header: React.FC<HeaderProps> = ({
   const [profileData, setProfileData] = useState<any>(null);
   const [userStatus, setUserStatus] = useState<'verified' | 'member'>('member');
   
-  const [unreadMessageCount, setUnreadMessageCount] = useState(0);
-  const [unreadNotificationCount, setUnreadNotificationCount] = useState(0);
+  // Use the real unread counts hook
+  const { data: unreadCounts } = useUnreadCounts();
+  const unreadMessageCount = unreadCounts?.total || 0;
+  const unreadNotificationCount = 0; // Notifications not implemented yet
 
   useEffect(() => {
     const getCurrentUser = async () => {
@@ -61,8 +64,6 @@ const Header: React.FC<HeaderProps> = ({
               setUserInitials(initials);
             }
           }
-          
-        
         }
       } catch (error) {
         console.error('Error getting user:', error);
@@ -71,8 +72,6 @@ const Header: React.FC<HeaderProps> = ({
 
     getCurrentUser();
   }, []);
-
-  
 
   const handleLogout = async () => {
     try {

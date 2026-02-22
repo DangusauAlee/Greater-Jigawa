@@ -19,7 +19,9 @@ import Explore from './pages/Explore';
 import Businesses from './pages/Businesses';
 import BusinessDetails from './pages/BusinessDetails';
 import Profile from './pages/Profile';
-
+import NewConversation from './components/messages/NewConversation';
+import ChatWindow from './components/messages/ChatWindow';
+import ConversationsList from './components/messages/ConversationsList';
 // Layout wrapper for web/mobile responsiveness
 const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   return (
@@ -75,6 +77,9 @@ function App() {
             <Route path="/Businesses" element={<Layout><Businesses /></Layout>} />
             <Route path="/Business/:id" element={<Layout><BusinessDetails /></Layout>} />
             <Route path="/Profile/:userId?" element={<Layout><Profile /></Layout>} />
+            <Route path="/messages" element={<ConversationsList />} />
+            <Route path="/messages/:conversationId" element={<ChatWindow />} />
+            <Route path="/messages/new" element={<NewConversation />} />
 
             {/* Fallback */}
             <Route path="*" element={<Navigate to="/Home" replace />} />
