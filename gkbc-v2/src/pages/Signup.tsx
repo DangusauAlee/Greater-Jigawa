@@ -449,7 +449,7 @@ const SignUp: React.FC = () => {
                 </span>
               </h1>
               <p className="text-xs text-gray-500 text-center font-medium mt-0.5">
-                Africa's Emerging Economic Vanguard
+                Driving Economic Growth
               </p>
             </div>
             
@@ -717,11 +717,11 @@ const SignUp: React.FC = () => {
                     <div className="flex-1 min-w-0">
                       <span className="text-xs text-gray-700">
                         I agree to the{' '}
-                        <Link to="/terms" className="text-green-600 font-semibold hover:underline">
+                        <Link to="/Terms" className="text-green-600 font-semibold hover:underline">
                           Terms & Conditions
                         </Link>{' '}
                         and{' '}
-                        <Link to="/privacy" className="text-green-600 font-semibold hover:underline">
+                        <Link to="/Privacy" className="text-green-600 font-semibold hover:underline">
                           Privacy Policy
                         </Link>
                       </span>

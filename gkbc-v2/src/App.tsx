@@ -26,6 +26,9 @@ import NewConversation from './components/messages/NewConversation';
 import ChatWindow from './components/messages/ChatWindow';
 import ConversationsList from './components/messages/ConversationsList';
 import HelpSupport from './pages/HelpSupport';
+import Terms from './pages/Terms';
+import Privacy from './pages/Privacy';
+import LandingPage from './pages/LandingPage';
 
 
 
@@ -76,11 +79,13 @@ function App() {
         <QueryProvider>
           <Routes>
             {/* Public / Auth pages - no layout */}
-            <Route path="/" element={<Login />} />
+            <Route path="/" element={<LandingPage />} />
+            <Route path="/Login" element={<Login />} />
             <Route path="/Signup" element={<Signup />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password" element={<ResetPassword />} />
-
+            <Route path="/Terms" element={<Terms />} /> 
+            <Route path="/Privacy" element={<Privacy />} />
             {/* Protected pages - with layout */}
             <Route path="/Home" element={<Layout><Home /></Layout>} />
             <Route path="/Members" element={<Layout><Members /></Layout>} />

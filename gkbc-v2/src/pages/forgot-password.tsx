@@ -85,7 +85,7 @@ const ForgotPassword: React.FC = () => {
               </span>
             </h1>
             <p className="text-xs text-gray-500 text-center font-medium mt-0.5">
-              Africa's Emerging Economic Vanguard
+              Driving Economic Growth
             </p>
           </div>
         </div>
