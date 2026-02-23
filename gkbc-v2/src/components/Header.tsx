@@ -4,6 +4,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '../services/supabase';
 import VerifiedBadge from './VerifiedBadge';
 import { useUnreadCounts } from '../hooks/useUnreadCounts';
+import { useNotifications } from '../hooks/useNotifications'; // <-- import
 
 interface HeaderProps {
   userName?: string;
@@ -26,10 +27,12 @@ const Header: React.FC<HeaderProps> = ({
   const [profileData, setProfileData] = useState<any>(null);
   const [userStatus, setUserStatus] = useState<'verified' | 'member'>('member');
   
-  // Use the real unread counts hook
+  // Use the real unread counts hook for messages
   const { data: unreadCounts } = useUnreadCounts();
   const unreadMessageCount = unreadCounts?.total || 0;
-  const unreadNotificationCount = 0; // Notifications not implemented yet
+  
+  // Use the notifications hook for real unread count
+  const { unreadCount: unreadNotificationCount } = useNotifications(); // <-- replace
 
   useEffect(() => {
     const getCurrentUser = async () => {

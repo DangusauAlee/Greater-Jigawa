@@ -350,7 +350,14 @@ const Login: React.FC = () => {
       }
       
       // STEP 5: Successful login
-      navigate('/Home');
+
+      // STEP 5: Successful login
+// Trigger RSVP reminders check in the background (does not delay navigation)
+      supabase.rpc('check_rsvp_reminders').then(({ error }) => {
+       if (error) console.error('RSVP reminder check failed:', error);
+      });
+
+      navigate('/Home'); 
       
     } catch (err: any) {
       // Only log critical network errors

@@ -3,6 +3,8 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryProvider } from './Providers/QueryProvider';
 import { usePresence } from './hooks/usePresence';
 import { AuthProvider } from './contexts/AuthContext';
+import { NotificationsPage } from './pages/NotificationsPage';
+import { AnnouncementPage } from './pages/AnnouncementPage';
 import BottomNav from './components/BottomNav';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
@@ -24,6 +26,8 @@ import NewConversation from './components/messages/NewConversation';
 import ChatWindow from './components/messages/ChatWindow';
 import ConversationsList from './components/messages/ConversationsList';
 import HelpSupport from './pages/HelpSupport';
+
+
 
 // Presence tracker component – must be inside AuthProvider
 const PresenceTracker: React.FC = () => {
@@ -87,11 +91,17 @@ function App() {
             <Route path="/Businesses" element={<Layout><Businesses /></Layout>} />
             <Route path="/Business/:id" element={<Layout><BusinessDetails /></Layout>} />
             <Route path="/Profile/:userId?" element={<Layout><Profile /></Layout>} />
-            <Route path="/messages" element={<ConversationsList />} />
+            <Route path="/messages" element={<Layout><ConversationsList /></Layout>} />
             <Route path="/messages/new/chat" element={<ChatWindow />} />
             <Route path="/messages/:conversationId" element={<ChatWindow />} />
-            <Route path="/messages/new" element={<NewConversation />} />
+            <Route path="/messages/new" element={<Layout><NewConversation /></Layout>} />
             <Route path="/HelpSupport" element={<Layout><HelpSupport /></Layout>} />
+            <Route path="/notifications" element={<Layout><NotificationsPage /></Layout>} />
+            <Route path="/announcements/:id" element={<Layout><AnnouncementPage /></Layout>} />
+            {/* Notification navigation routes */}
+            <Route path="/post/:id" element={<Layout><Home /></Layout>} />
+            <Route path="/event/:id" element={<Layout><Explore /></Layout>} />
+            <Route path="/support/:id" element={<Layout><HelpSupport /></Layout>} />
             {/* Fallback */}
             <Route path="*" element={<Navigate to="/Home" replace />} />
           </Routes>

@@ -13,8 +13,8 @@ const BottomNav: React.FC = () => {
 
   return (
     // ADDED: w-full and overflow-hidden
-    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-gradient-to-r from-green-700 via-green-600 to-green-700 shadow-xl w-full pt-1.5">
-      <div className="flex justify-between items-center w-full px-2">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-gradient-to-r from-green-700 via-green-600 to-green-700 shadow-xl w-full pt-2">
+      <div className="flex justify-between items-center w-full px-1.5">
         {navItems.map((item) => (
           <NavLink
             key={item.path}
@@ -23,14 +23,14 @@ const BottomNav: React.FC = () => {
               flex flex-col items-center justify-center transition-all duration-300
               flex-shrink-0
               ${isActive ? 'text-white' : 'text-white/70'}
-              min-h-[60px] w-[20%] /* Each item takes 20% width */
+              min-h-[50px] w-[20%] /* Each item takes 20% width */
             `}
             aria-label={item.label}
           >
             {({ isActive }) => (
               <>
                 <div className={`
-                  p-2.5 rounded-2xl transition-all duration-300 mb-1
+                  p-2 rounded-2xl transition-all duration-300 mb-1
                   ${isActive ? 'bg-white/50 backdrop-blur-sm shadow-sm' : 'bg-transparent'}
                   flex items-center justify-center
                 `}>
@@ -41,7 +41,7 @@ const BottomNav: React.FC = () => {
                     className={isActive ? "text-white" : "text-white/70"}
                   />
                 </div>
-                <span className={`text-xs font-medium ${isActive ? 'text-white' : 'text-white/70'}`}>
+                <span className={`text-s font-medium ${isActive ? 'text-white' : 'text-white/70'}`}>
                   {item.label}
                 </span>
               </>
