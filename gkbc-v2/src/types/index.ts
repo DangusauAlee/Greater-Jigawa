@@ -310,3 +310,35 @@ export interface ConnectionUser {
   avatar_url?: string | null;
 }
 
+export interface SupportTicket {
+  id: string;
+  user_id: string;
+  subject: string;
+  message: string;
+  category: string;
+  priority: string;
+  status: 'pending' | 'in_progress' | 'resolved' | 'closed';
+  assigned_to?: string | null;
+  closed_at?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface SupportReply {
+  id: string;
+  ticket_id: string;
+  user_id: string;
+  message: string;
+  is_admin: boolean;
+  attachments?: string[];
+  created_at: string;
+  updated_at: string;
+}
+
+export interface SubmitTicketData {
+  subject: string;
+  message: string;
+  category?: string;
+  priority?: string;
+}
+

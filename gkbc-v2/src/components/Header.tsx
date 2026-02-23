@@ -91,9 +91,10 @@ const Header: React.FC<HeaderProps> = ({
     navigate('/notifications');
   };
 
+
   const profileMenuItems = [
     { label: 'My Profile', path: '/profile', icon: User },
-    { label: 'Help & Support', path: '/help-support', icon: HelpCircle },
+    { label: 'Help & Support', path: '/HelpSupport', icon: HelpCircle },
     { label: 'Logout', action: handleLogout, icon: LogOut },
   ];
 
@@ -202,7 +203,7 @@ const Header: React.FC<HeaderProps> = ({
                   {/* Verification Badge on Avatar - Positioned outside the frame */}
                   {userStatus === 'verified' && (
                     <div className="absolute -bottom-0.5 -right-0.5 z-10">
-                      <VerifiedBadge size={10} className="drop-shadow-md" />
+                      <VerifiedBadge size={12} className="drop-shadow-md" />
                     </div>
                   )}
                 </div>
@@ -211,7 +212,7 @@ const Header: React.FC<HeaderProps> = ({
                     <p className="text-white text-sm font-semibold leading-tight">
                       {displayName.split(' ')[0]}
                     </p>
-                    {userStatus === 'verified' && <VerifiedBadge size={8} className="ml-1" />}
+                    {userStatus === 'verified' && <VerifiedBadge size={12} className="ml-1" />}
                   </div>
                   <p className="text-white/80 text-xs">
                     {userStatus === 'verified' ? 'Verified Member' : 'Member'}
@@ -247,7 +248,7 @@ const Header: React.FC<HeaderProps> = ({
                           {/* Verification Badge on Avatar - Positioned outside the frame */}
                           {userStatus === 'verified' && (
                             <div className="absolute -bottom-0.5 -right-0.5 z-10">
-                              <VerifiedBadge size={10} className="drop-shadow-md" />
+                              <VerifiedBadge size={12} className="drop-shadow-md" />
                             </div>
                           )}
                         </div>

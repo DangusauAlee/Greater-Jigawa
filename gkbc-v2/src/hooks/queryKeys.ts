@@ -71,3 +71,10 @@ export const messagingKeys = {
   unreadCounts: (userId?: string) =>
     [...messagingKeys.all, 'unreadCounts', userId] as const,
 };
+
+export const supportKeys = {
+  all: ['support'] as const,
+  tickets: () => [...supportKeys.all, 'tickets'] as const,
+  ticket: (id: string) => [...supportKeys.tickets(), id] as const,
+  replies: (ticketId: string) => [...supportKeys.ticket(ticketId), 'replies'] as const,
+};

@@ -28,3 +28,19 @@ export const formatTimeAgo = (dateString: string): string => {
     year: date.getFullYear() !== now.getFullYear() ? 'numeric' : undefined,
   });
 };
+
+/**
+ * Formats a date into a standard readable format (e.g., "Jan 15, 2024, 10:30 AM").
+ * @param dateString - ISO date string or any valid date string.
+ * @returns Formatted date string.
+ */
+export const formatDate = (dateString: string): string => {
+  const date = new Date(dateString);
+  return date.toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+};

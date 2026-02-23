@@ -23,6 +23,7 @@ import Profile from './pages/Profile';
 import NewConversation from './components/messages/NewConversation';
 import ChatWindow from './components/messages/ChatWindow';
 import ConversationsList from './components/messages/ConversationsList';
+import HelpSupport from './pages/HelpSupport';
 
 // Presence tracker component – must be inside AuthProvider
 const PresenceTracker: React.FC = () => {
@@ -90,7 +91,7 @@ function App() {
             <Route path="/messages/new/chat" element={<ChatWindow />} />
             <Route path="/messages/:conversationId" element={<ChatWindow />} />
             <Route path="/messages/new" element={<NewConversation />} />
-
+            <Route path="/HelpSupport" element={<Layout><HelpSupport /></Layout>} />
             {/* Fallback */}
             <Route path="*" element={<Navigate to="/Home" replace />} />
           </Routes>
