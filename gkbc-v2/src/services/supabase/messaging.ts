@@ -1,9 +1,6 @@
 import { supabase } from '../supabase';
 import type { Conversation, Message, UnreadCounts } from '../../types/index';
 
-
-
-
 // Helper: compress image (standalone, not part of the service object)
 async function compressImage(file: File, maxWidth = 1200, quality = 0.8): Promise<File> {
   return new Promise((resolve, reject) => {
@@ -46,30 +43,29 @@ async function compressImage(file: File, maxWidth = 1200, quality = 0.8): Promis
   });
 }
 
-
-
 export const messagingService = {
   // ==================== CONVERSATIONS ====================
   async getConversations(userId: string, context?: string): Promise<Conversation[]> {
-  const { data, error } = await supabase.rpc('get_user_conversations', {
-    p_user_id: userId,
-    p_context: context || null,
-  });
-  if (error) {
-    console.error('RPC error details:', {
-      message: error.message,
-      details: error.details,
-      hint: error.hint,
-      code: error.code
+    const { data, error } = await supabase.rpc('get_user_conversations', {
+      p_user_id: userId,
+      p_context: context || null,
     });
-    throw error;
-  }
-  // Map the result to include 'id' as an alias for 'conversation_id'
-  return (data || []).map((item: any) => ({
-    ...item,
-    id: item.conversation_id, // this is the missing field
-  }));
-},
+    if (error) {
+      console.error('RPC error details:', {
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+        code: error.code,
+      });
+      throw error;
+    }
+    // Map the result to include 'id' as an alias for 'conversation_id'
+    return (data || []).map((item: any) => ({
+      ...item,
+      id: item.conversation_id, // this is the missing field
+    }));
+  },
+
   async getOrCreateConversation(
     userId: string,
     otherUserId: string,
@@ -86,69 +82,80 @@ export const messagingService = {
     return data;
   },
 
-  // Add inside the messagingService object
-async searchVerifiedUsers(query: string, currentUserId: string): Promise<any[]> {
-  const { data, error } = await supabase
-    .from('profiles')
-    .select('id, first_name, last_name, avatar_url, user_status')
-    .neq('id', currentUserId)
-    .eq('user_status', 'verified')
-    .or(`first_name.ilike.%${query}%,last_name.ilike.%${query}%`)
-    .order('first_name')
-    .limit(20);
-  if (error) throw error;
-  return data || [];
-},
+  async searchVerifiedUsers(query: string, currentUserId: string): Promise<any[]> {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('id, first_name, last_name, avatar_url, user_status')
+      .neq('id', currentUserId)
+      .eq('user_status', 'verified')
+      .or(`first_name.ilike.%${query}%,last_name.ilike.%${query}%`)
+      .order('first_name')
+      .limit(20);
+    if (error) throw error;
+    return data || [];
+  },
 
-async areUsersConnected(userId1: string, userId2: string): Promise<boolean> {
-  const { data, error } = await supabase
-    .from('connections')
-    .select('status')
-    .or(`and(user_id.eq.${userId1},connected_user_id.eq.${userId2}),and(user_id.eq.${userId2},connected_user_id.eq.${userId1})`)
-    .eq('status', 'connected')
-    .maybeSingle();
-  if (error) throw error;
-  return !!data;
-},
+  async areUsersConnected(userId1: string, userId2: string): Promise<boolean> {
+    const { data, error } = await supabase
+      .from('connections')
+      .select('status')
+      .or(`and(user_id.eq.${userId1},connected_user_id.eq.${userId2}),and(user_id.eq.${userId2},connected_user_id.eq.${userId1})`)
+      .eq('status', 'connected')
+      .maybeSingle();
+    if (error) throw error;
+    return !!data;
+  },
 
-async getConnectedVerifiedUsers(): Promise<Array<{ id: string; username: string; avatar_url: string | null }>> {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return [];
-  const { data, error } = await supabase.rpc('get_connected_verified_users', { p_user_id: user.id });
-  if (error) throw error;
-  return data || [];
-},
+  async getConnectedVerifiedUsers(): Promise<Array<{ id: string; username: string; avatar_url: string | null }>> {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return [];
+    const { data, error } = await supabase.rpc('get_connected_verified_users', { p_user_id: user.id });
+    if (error) throw error;
+    return data || [];
+  },
+
+  // ==================== CONNECTION REQUESTS ====================
+  async sendConnectionRequest(otherUserId: string): Promise<{ id: string }> {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('Not authenticated');
+    const { data, error } = await supabase.rpc('send_connection_request', {
+      p_connected_user_id: otherUserId,
+    });
+    if (error) throw error;
+    return data;
+  },
 
   // ==================== MESSAGES ====================
- async getMessages(
-  conversationId: string,
-  limit = 50,
-  offset = 0
-): Promise<Message[]> {
-  console.log('🔍 getMessages called with:', { conversationId, limit, offset });
-  try {
-    const { data, error } = await supabase.rpc('get_conversation_messages', {
-      p_conversation_id: conversationId,
-      p_limit: limit,
-      p_offset: offset,
-    });
-    if (error) {
-      console.error('❌ RPC error in getMessages:', {
-        message: error.message,
-        details: error.details,
-        hint: error.hint,
-        code: error.code,
+  async getMessages(
+    conversationId: string,
+    limit = 50,
+    offset = 0
+  ): Promise<Message[]> {
+    console.log('🔍 getMessages called with:', { conversationId, limit, offset });
+    try {
+      const { data, error } = await supabase.rpc('get_conversation_messages', {
+        p_conversation_id: conversationId,
+        p_limit: limit,
+        p_offset: offset,
       });
-      throw error;
+      if (error) {
+        console.error('❌ RPC error in getMessages:', {
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          code: error.code,
+        });
+        throw error;
+      }
+      console.log('✅ getMessages success, data length:', data?.length);
+      // The RPC returns newest first; we reverse to show oldest first in UI
+      return (data || []).reverse();
+    } catch (err) {
+      console.error('❌ Unexpected error in getMessages:', err);
+      throw err;
     }
-    console.log('✅ getMessages success, data length:', data?.length);
-    // The RPC returns newest first; we reverse to show oldest first in UI
-    return (data || []).reverse();
-  } catch (err) {
-    console.error('❌ Unexpected error in getMessages:', err);
-    throw err;
-  }
-},
+  },
+
   async sendMessage(
     conversationId: string,
     senderId: string,
@@ -170,27 +177,27 @@ async getConnectedVerifiedUsers(): Promise<Array<{ id: string; username: string;
   },
 
   async markMessagesAsRead(conversationId: string, userId: string): Promise<void> {
-  console.log('🔍 markMessagesAsRead called with:', { conversationId, userId });
-  try {
-    const { error } = await supabase.rpc('mark_messages_as_read', {
-      p_conversation_id: conversationId,
-      p_user_id: userId,
-    });
-    if (error) {
-      console.error('❌ RPC error in markMessagesAsRead:', {
-        message: error.message,
-        details: error.details,
-        hint: error.hint,
-        code: error.code,
+    console.log('🔍 markMessagesAsRead called with:', { conversationId, userId });
+    try {
+      const { error } = await supabase.rpc('mark_messages_as_read', {
+        p_conversation_id: conversationId,
+        p_user_id: userId,
       });
-      throw error;
+      if (error) {
+        console.error('❌ RPC error in markMessagesAsRead:', {
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          code: error.code,
+        });
+        throw error;
+      }
+      console.log('✅ markMessagesAsRead success');
+    } catch (err) {
+      console.error('❌ Unexpected error in markMessagesAsRead:', err);
+      throw err;
     }
-    console.log('✅ markMessagesAsRead success');
-  } catch (err) {
-    console.error('❌ Unexpected error in markMessagesAsRead:', err);
-    throw err;
-  }
-},
+  },
 
   // ==================== UNREAD COUNTS ====================
   async getUnreadCounts(userId: string): Promise<UnreadCounts> {
@@ -219,6 +226,12 @@ async getConnectedVerifiedUsers(): Promise<Array<{ id: string; username: string;
     const { error } = await supabase.rpc('update_last_seen', { p_user_id: userId });
     if (error) console.error('Failed to update last seen', error);
   },
+
+  async getUserLastSeen(userId: string): Promise<string | null> {
+  const { data, error } = await supabase.rpc('get_user_last_seen', { p_user_id: userId });
+  if (error) throw error;
+  return data;
+},
 
   // ==================== MEDIA UPLOAD ====================
   async uploadMedia(conversationId: string, file: File): Promise<string> {

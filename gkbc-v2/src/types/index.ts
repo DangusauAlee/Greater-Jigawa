@@ -287,6 +287,7 @@ export interface Message {
   sender_id: string;
   sender_name: string;
   sender_avatar?: string | null;
+  sender_status?: 'verified' | 'member' | null;
   type: MessageType;
   content?: string | null;
   listing_id?: string | null;

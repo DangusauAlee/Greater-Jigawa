@@ -288,13 +288,15 @@ const ConversationsList: React.FC = () => {
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
-                      <h3 className="font-bold text-gray-900 truncate">
-                        {conv.other_user_name}
-                      </h3>
+                      <div className="flex items-center gap-1">
+                    <h3 className="font-bold text-gray-900 truncate">
+                      {conv.other_user_name}
+                    </h3>
+                    {conv.other_user_status === 'verified' && <VerifiedBadge size={12} />}
+                    </div>
                       {conv.context === 'marketplace' && (
                         <span className="inline-flex items-center gap-1 bg-orange-100 text-orange-700 text-xs px-2 py-0.5 rounded-full">
                           <Store className="w-3 h-3" />
-                          <span>Marketplace</span>
                         </span>
                       )}
                     </div>

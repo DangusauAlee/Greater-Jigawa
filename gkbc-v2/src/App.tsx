@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryProvider } from './Providers/QueryProvider';
+import { usePresence } from './hooks/usePresence';
 import { AuthProvider } from './contexts/AuthContext';
 import BottomNav from './components/BottomNav';
 import Sidebar from './components/Sidebar';
@@ -22,6 +23,13 @@ import Profile from './pages/Profile';
 import NewConversation from './components/messages/NewConversation';
 import ChatWindow from './components/messages/ChatWindow';
 import ConversationsList from './components/messages/ConversationsList';
+
+// Presence tracker component – must be inside AuthProvider
+const PresenceTracker: React.FC = () => {
+  usePresence();
+  return null;
+};
+
 // Layout wrapper for web/mobile responsiveness
 const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   return (
@@ -59,6 +67,7 @@ function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
+        <PresenceTracker />
         <QueryProvider>
           <Routes>
             {/* Public / Auth pages - no layout */}
@@ -81,7 +90,6 @@ function App() {
             <Route path="/messages/new/chat" element={<ChatWindow />} />
             <Route path="/messages/:conversationId" element={<ChatWindow />} />
             <Route path="/messages/new" element={<NewConversation />} />
-            
 
             {/* Fallback */}
             <Route path="*" element={<Navigate to="/Home" replace />} />

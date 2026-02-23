@@ -60,9 +60,9 @@ export const useSendMessage = (conversationId: string) => {
     },
 
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: messagingKeys.messages(conversationId) });
-      queryClient.invalidateQueries({ queryKey: messagingKeys.conversations() });
-      queryClient.invalidateQueries({ queryKey: messagingKeys.unreadCounts() });
-    },
+  queryClient.invalidateQueries({ queryKey: messagingKeys.messages(conversationId) });
+  queryClient.invalidateQueries({ queryKey: messagingKeys.all }); // <-- changed
+  queryClient.invalidateQueries({ queryKey: messagingKeys.unreadCounts() });
+   },
   });
 };

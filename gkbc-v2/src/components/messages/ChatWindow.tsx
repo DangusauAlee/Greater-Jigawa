@@ -11,6 +11,7 @@ import VerifiedBadge from '../VerifiedBadge';
 import { messagingService } from '../../services/supabase/messaging';
 import { useQueryClient } from '@tanstack/react-query';
 import { messagingKeys } from '../../hooks/queryKeys';
+import { useUserLastSeen } from '../../hooks/useUserLastSeen';
 
 // Simple inline message bubble component
 const MessageBubble: React.FC<{
@@ -253,7 +254,7 @@ const ChatWindow: React.FC = () => {
         );
 
         // Invalidate and force refetch of conversations and unread counts
-        await queryClient.invalidateQueries({ queryKey: messagingKeys.conversations() });
+        await queryClient.invalidateQueries({ queryKey: messagingKeys.all });
         await queryClient.invalidateQueries({ queryKey: messagingKeys.unreadCounts() });
         await queryClient.refetchQueries({ queryKey: messagingKeys.conversations() });
         await queryClient.refetchQueries({ queryKey: messagingKeys.unreadCounts() });
@@ -325,7 +326,7 @@ const ChatWindow: React.FC = () => {
         );
 
         // Invalidate and force refetch
-        await queryClient.invalidateQueries({ queryKey: messagingKeys.conversations() });
+        await queryClient.invalidateQueries({ queryKey: messagingKeys.all });
         await queryClient.invalidateQueries({ queryKey: messagingKeys.unreadCounts() });
         await queryClient.refetchQueries({ queryKey: messagingKeys.conversations() });
         await queryClient.refetchQueries({ queryKey: messagingKeys.unreadCounts() });
@@ -390,6 +391,18 @@ const ChatWindow: React.FC = () => {
     status: 'member',
   });
 
+  const { data: lastSeen } = useUserLastSeen(otherUser.id);
+
+  const isOnline = lastSeen 
+    ? (new Date().getTime() - new Date(lastSeen).getTime()) < 2 * 60 * 1000  // within 2 minutes
+    : false;
+
+  const statusText = isOnline 
+    ? 'Online' 
+    : lastSeen 
+      ? `Last seen ${formatTimeAgo(lastSeen)}` 
+      : '';
+
   return (
     <div className="h-screen flex flex-col bg-gray-50">
       {/* Header */}
@@ -399,14 +412,17 @@ const ChatWindow: React.FC = () => {
             <ArrowLeft className="w-5 h-5 text-gray-600" />
           </button>
           <div className="flex items-center gap-2">
-            <div className="relative w-10 h-10 rounded-full overflow-hidden bg-gradient-to-br from-green-500 to-green-600">
-              {otherUser.avatar ? (
-                <img src={otherUser.avatar} alt={otherUser.name} className="w-full h-full object-cover" />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center text-white font-bold">
-                  {otherUser.name?.charAt(0).toUpperCase()}
-                </div>
-              )}
+            {/* Avatar with badge outside the frame */}
+            <div className="relative flex-shrink-0">
+              <div className="w-10 h-10 rounded-full overflow-hidden bg-gradient-to-br from-green-500 to-green-600">
+                {otherUser.avatar ? (
+                  <img src={otherUser.avatar} alt={otherUser.name} className="w-full h-full object-cover" />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-white font-bold">
+                    {otherUser.name?.charAt(0).toUpperCase()}
+                  </div>
+                )}
+              </div>
               {otherUser.status === 'verified' && (
                 <div className="absolute -bottom-1 -right-1">
                   <VerifiedBadge size={12} />
@@ -418,6 +434,10 @@ const ChatWindow: React.FC = () => {
                 <h2 className="font-bold text-gray-900">{otherUser.name}</h2>
                 {otherUser.status === 'verified' && <VerifiedBadge size={12} />}
               </div>
+              {/* Online/Last Seen Status */}
+              {otherUser.id && (
+                <p className="text-xs text-gray-500">{statusText}</p>
+              )}
               {location.state?.listing && (
                 <div className="flex items-center gap-1 text-xs text-gray-500">
                   <Store className="w-3 h-3" />
