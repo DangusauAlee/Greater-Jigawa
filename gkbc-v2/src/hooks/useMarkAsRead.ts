@@ -6,7 +6,6 @@ import { useAuth } from '../contexts/AuthContext';
 export const useMarkAsRead = (conversationId: string) => {
   const queryClient = useQueryClient();
   const { user } = useAuth();
-
   return useMutation({
     mutationFn: () => messagingService.markMessagesAsRead(conversationId, user!.id),
     onSuccess: () => {

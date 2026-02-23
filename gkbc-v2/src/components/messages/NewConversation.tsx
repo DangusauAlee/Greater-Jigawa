@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { supabase } from '../../services/supabase';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Search, User, UserCheck, UserPlus, Store, AlertCircle } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { messagingService } from '../../services/supabase/messaging';
+import { supabase } from '../../services/supabase';
 import VerifiedBadge from '../VerifiedBadge';
 
 interface UserProfile {
@@ -23,19 +23,53 @@ const NewConversation: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [searching, setSearching] = useState(false);
   const [activeTab, setActiveTab] = useState<'connections' | 'discover'>('connections');
+  const [userStatus, setUserStatus] = useState<'verified' | 'member' | null>(null);
+  const [checkingStatus, setCheckingStatus] = useState(true);
+
+  // Redirect members away
+  useEffect(() => {
+    const checkStatus = async () => {
+      if (!user) {
+        navigate('/login');
+        return;
+      }
+      try {
+        const { data } = await supabase
+          .from('profiles')
+          .select('user_status')
+          .eq('id', user.id)
+          .single();
+        if (data) {
+          const status = data.user_status as 'verified' | 'member';
+          setUserStatus(status);
+          if (status === 'member') {
+            // Redirect members to marketplace (or conversations list)
+            navigate('/marketplace');
+          }
+        }
+      } catch (error) {
+        console.error('Error checking user status:', error);
+      } finally {
+        setCheckingStatus(false);
+      }
+    };
+    checkStatus();
+  }, [user, navigate]);
 
   useEffect(() => {
-    loadConnections();
-  }, []);
+    if (userStatus === 'verified') {
+      loadConnections();
+    }
+  }, [userStatus]);
 
   useEffect(() => {
-    if (activeTab === 'discover' && searchQuery.trim()) {
+    if (activeTab === 'discover' && searchQuery.trim() && userStatus === 'verified') {
       const delay = setTimeout(() => searchUsers(), 300);
       return () => clearTimeout(delay);
     } else if (activeTab === 'discover' && !searchQuery.trim()) {
       setSearchResults([]);
     }
-  }, [searchQuery, activeTab]);
+  }, [searchQuery, activeTab, userStatus]);
 
   const loadConnections = async () => {
     setLoading(true);
@@ -50,15 +84,14 @@ const NewConversation: React.FC = () => {
   };
 
   const searchUsers = async () => {
-    if (!searchQuery.trim()) return;
+    if (!searchQuery.trim() || !user) return;
     setSearching(true);
     try {
-      // RPC to search verified users (to be implemented)
       const { data, error } = await supabase
         .from('profiles')
         .select('id, first_name, last_name, avatar_url')
         .eq('user_status', 'verified')
-        .neq('id', user?.id)
+        .neq('id', user.id)
         .or(`first_name.ilike.%${searchQuery}%,last_name.ilike.%${searchQuery}%`)
         .limit(20);
       if (error) throw error;
@@ -77,31 +110,49 @@ const NewConversation: React.FC = () => {
     }
   };
 
-  const handleStartConversation = async (otherUserId: string) => {
-    if (!user) return;
-    try {
-      const validation = await messagingService.canStartConnectionChat(user.id, otherUserId);
-      if (!validation.canStart) {
-        alert(validation.reason);
-        return;
-      }
-      const conversationId = await messagingService.getOrCreateConversation(user.id, otherUserId, 'connection');
-      const otherUser = (activeTab === 'connections' ? connections : searchResults).find(u => u.id === otherUserId);
-      navigate(`/messages/${conversationId}`, {
-        state: {
-          otherUser: {
-            id: otherUserId,
-            name: otherUser?.username,
-            avatar: otherUser?.avatar_url,
-            status: 'verified',
-          },
-          context: 'connection',
-        },
-      });
-    } catch (error: any) {
-      alert(error.message || 'Failed to start conversation');
+const handleStartConversation = async (otherUserId: string) => {
+  if (!user || userStatus !== 'verified') return;
+  
+  // Validate first (optional – you can keep or remove validation)
+  try {
+    const validation = await messagingService.canStartConnectionChat(user.id, otherUserId);
+    if (!validation || !validation.can_start) {
+      alert(validation?.reason || 'Cannot start conversation');
+      return;
     }
-  };
+  } catch (error) {
+    console.error('Validation error:', error);
+  }
+
+  const otherUser = (activeTab === 'connections' ? connections : searchResults).find(u => u.id === otherUserId);
+  
+  // Navigate to the new‑conversation chat window without creating a DB entry
+  navigate('/messages/new/chat', {
+    state: {
+      otherUser: {
+        id: otherUserId,
+        name: otherUser?.username,
+        avatar: otherUser?.avatar_url,
+        status: 'verified',
+      },
+      context: 'connection',
+    },
+  });
+};
+
+  if (checkingStatus) {
+    return (
+      <div className="min-h-screen bg-gray-50 p-4">
+        <div className="animate-pulse space-y-4">
+          <div className="h-8 bg-gray-200 rounded w-32"></div>
+          <div className="h-12 bg-gray-200 rounded"></div>
+        </div>
+      </div>
+    );
+  }
+
+  // If not verified, this won't render because we redirect above, but keep for safety
+  if (userStatus !== 'verified') return null;
 
   const displayedUsers = activeTab === 'connections' ? connections : searchResults;
 
@@ -176,6 +227,11 @@ const NewConversation: React.FC = () => {
                 </div>
               </div>
             ))}
+          </div>
+        ) : searching ? (
+          <div className="text-center py-8">
+            <div className="animate-spin w-8 h-8 border-4 border-green-500 border-t-transparent rounded-full mx-auto"></div>
+            <p className="mt-2 text-gray-600">Searching...</p>
           </div>
         ) : displayedUsers.length === 0 ? (
           <div className="text-center py-12">

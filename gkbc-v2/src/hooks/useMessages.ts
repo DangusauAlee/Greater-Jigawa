@@ -7,11 +7,11 @@ export const useMessages = (conversationId: string, limit = 50) => {
     queryKey: messagingKeys.messages(conversationId),
     queryFn: ({ pageParam = 0 }) =>
       messagingService.getMessages(conversationId, limit, pageParam * limit),
+    enabled: !!conversationId && conversationId !== 'undefined',
     initialPageParam: 0,
     getNextPageParam: (lastPage, allPages) => {
       return lastPage.length === limit ? allPages.length : undefined;
     },
-    enabled: !!conversationId,
     staleTime: 5 * 60 * 1000,
   });
 };

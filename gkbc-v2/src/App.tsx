@@ -78,8 +78,10 @@ function App() {
             <Route path="/Business/:id" element={<Layout><BusinessDetails /></Layout>} />
             <Route path="/Profile/:userId?" element={<Layout><Profile /></Layout>} />
             <Route path="/messages" element={<ConversationsList />} />
+            <Route path="/messages/new/chat" element={<ChatWindow />} />
             <Route path="/messages/:conversationId" element={<ChatWindow />} />
             <Route path="/messages/new" element={<NewConversation />} />
+            
 
             {/* Fallback */}
             <Route path="*" element={<Navigate to="/Home" replace />} />

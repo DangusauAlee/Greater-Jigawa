@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MessageCircle, Store, Users, Search, Plus, RefreshCw, Bell, Clock } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
@@ -6,27 +6,56 @@ import { useConversations } from '../../hooks/useConversations';
 import { useUnreadCounts } from '../../hooks/useUnreadCounts';
 import { formatTimeAgo } from '../../utils/formatters';
 import VerifiedBadge from '../VerifiedBadge';
+import { supabase } from '../../services/supabase';
 
 const ConversationsList: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<'all' | 'network' | 'marketplace'>('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [userStatus, setUserStatus] = useState<'verified' | 'member' | null>(null);
+
+  // Fetch user status
+  useEffect(() => {
+    const getUserStatus = async () => {
+      if (!user) return;
+      try {
+        const { data } = await supabase
+          .from('profiles')
+          .select('user_status')
+          .eq('id', user.id)
+          .single();
+        if (data) {
+          setUserStatus(data.user_status as 'verified' | 'member');
+        }
+      } catch (error) {
+        console.error('Error fetching user status:', error);
+      }
+    };
+    getUserStatus();
+  }, [user]);
 
   const { data: conversations = [], isLoading, refetch } = useConversations(
     activeTab === 'all' ? undefined : activeTab === 'network' ? 'connection' : 'marketplace'
   );
   const { data: unreadCounts } = useUnreadCounts();
 
+  // Filter conversations for members: only show marketplace
   const filteredConversations = useMemo(() => {
-    if (!searchQuery.trim()) return conversations;
-    const query = searchQuery.toLowerCase();
-    return conversations.filter(conv => 
-      conv.other_user_name?.toLowerCase().includes(query) ||
-      conv.listing_title?.toLowerCase().includes(query) ||
-      conv.last_message?.toLowerCase().includes(query)
-    );
-  }, [conversations, searchQuery]);
+    let filtered = conversations;
+    if (userStatus === 'member') {
+      filtered = filtered.filter(c => c.context === 'marketplace');
+    }
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(conv => 
+        conv.other_user_name?.toLowerCase().includes(query) ||
+        conv.listing_title?.toLowerCase().includes(query) ||
+        conv.last_message?.toLowerCase().includes(query)
+      );
+    }
+    return filtered;
+  }, [conversations, searchQuery, userStatus]);
 
   const handleConversationClick = (conversation: any) => {
     navigate(`/messages/${conversation.id}`, {
@@ -47,7 +76,12 @@ const ConversationsList: React.FC = () => {
   };
 
   const handleNewConversation = () => {
-    navigate('/messages/new');
+    // Verified users go to /messages/new, members go to marketplace
+    if (userStatus === 'verified') {
+      navigate('/messages/new');
+    } else {
+      navigate('/marketplace');
+    }
   };
 
   const getUnreadForTab = (tab: string) => {
@@ -144,22 +178,25 @@ const ConversationsList: React.FC = () => {
             )}
           </button>
 
-          <button
-            onClick={() => setActiveTab('network')}
-            className={`flex items-center gap-2 py-3 border-b-2 transition-colors ${
-              activeTab === 'network'
-                ? 'border-green-600 text-green-600'
-                : 'border-transparent text-gray-500 hover:text-green-600'
-            }`}
-          >
-            <Users className="w-4 h-4" />
-            <span className="font-medium">Network</span>
-            {getUnreadForTab('network') > 0 && (
-              <span className="bg-red-100 text-red-600 text-xs px-1.5 py-0.5 rounded-full">
-                {getUnreadForTab('network')}
-              </span>
-            )}
-          </button>
+          {/* Network tab only for verified users */}
+          {userStatus === 'verified' && (
+            <button
+              onClick={() => setActiveTab('network')}
+              className={`flex items-center gap-2 py-3 border-b-2 transition-colors ${
+                activeTab === 'network'
+                  ? 'border-green-600 text-green-600'
+                  : 'border-transparent text-gray-500 hover:text-green-600'
+              }`}
+            >
+              <Users className="w-4 h-4" />
+              <span className="font-medium">Network</span>
+              {getUnreadForTab('network') > 0 && (
+                <span className="bg-red-100 text-red-600 text-xs px-1.5 py-0.5 rounded-full">
+                  {getUnreadForTab('network')}
+                </span>
+              )}
+            </button>
+          )}
 
           <button
             onClick={() => setActiveTab('marketplace')}
@@ -288,14 +325,16 @@ const ConversationsList: React.FC = () => {
         )}
       </div>
 
-      {/* New Conversation FAB */}
-      <button
-        onClick={handleNewConversation}
-        className="fixed bottom-20 right-4 bg-green-600 text-white p-4 rounded-full shadow-xl hover:bg-green-700 transition-colors"
-        aria-label="New conversation"
-      >
-        <Plus className="w-6 h-6" />
-      </button>
+      {/* New Conversation FAB - hidden for members */}
+      {userStatus === 'verified' && (
+        <button
+          onClick={handleNewConversation}
+          className="fixed bottom-20 right-4 bg-green-600 text-white p-4 rounded-full shadow-xl hover:bg-green-700 transition-colors"
+          aria-label="New conversation"
+        >
+          <Plus className="w-6 h-6" />
+        </button>
+      )}
     </div>
   );
 };

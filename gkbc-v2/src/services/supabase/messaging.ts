@@ -64,7 +64,11 @@ export const messagingService = {
     });
     throw error;
   }
-  return data || [];
+  // Map the result to include 'id' as an alias for 'conversation_id'
+  return (data || []).map((item: any) => ({
+    ...item,
+    id: item.conversation_id, // this is the missing field
+  }));
 },
   async getOrCreateConversation(
     userId: string,
@@ -116,21 +120,35 @@ async getConnectedVerifiedUsers(): Promise<Array<{ id: string; username: string;
 },
 
   // ==================== MESSAGES ====================
-  async getMessages(
-    conversationId: string,
-    limit = 50,
-    offset = 0
-  ): Promise<Message[]> {
+ async getMessages(
+  conversationId: string,
+  limit = 50,
+  offset = 0
+): Promise<Message[]> {
+  console.log('🔍 getMessages called with:', { conversationId, limit, offset });
+  try {
     const { data, error } = await supabase.rpc('get_conversation_messages', {
       p_conversation_id: conversationId,
       p_limit: limit,
       p_offset: offset,
     });
-    if (error) throw error;
+    if (error) {
+      console.error('❌ RPC error in getMessages:', {
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+        code: error.code,
+      });
+      throw error;
+    }
+    console.log('✅ getMessages success, data length:', data?.length);
     // The RPC returns newest first; we reverse to show oldest first in UI
     return (data || []).reverse();
-  },
-
+  } catch (err) {
+    console.error('❌ Unexpected error in getMessages:', err);
+    throw err;
+  }
+},
   async sendMessage(
     conversationId: string,
     senderId: string,
@@ -152,12 +170,27 @@ async getConnectedVerifiedUsers(): Promise<Array<{ id: string; username: string;
   },
 
   async markMessagesAsRead(conversationId: string, userId: string): Promise<void> {
+  console.log('🔍 markMessagesAsRead called with:', { conversationId, userId });
+  try {
     const { error } = await supabase.rpc('mark_messages_as_read', {
       p_conversation_id: conversationId,
       p_user_id: userId,
     });
-    if (error) throw error;
-  },
+    if (error) {
+      console.error('❌ RPC error in markMessagesAsRead:', {
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+        code: error.code,
+      });
+      throw error;
+    }
+    console.log('✅ markMessagesAsRead success');
+  } catch (err) {
+    console.error('❌ Unexpected error in markMessagesAsRead:', err);
+    throw err;
+  }
+},
 
   // ==================== UNREAD COUNTS ====================
   async getUnreadCounts(userId: string): Promise<UnreadCounts> {

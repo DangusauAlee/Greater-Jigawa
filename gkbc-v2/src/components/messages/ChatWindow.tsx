@@ -9,6 +9,8 @@ import { useConversationSubscription } from '../../hooks/useConversationSubscrip
 import { formatTimeAgo } from '../../utils/formatters';
 import VerifiedBadge from '../VerifiedBadge';
 import { messagingService } from '../../services/supabase/messaging';
+import { useQueryClient } from '@tanstack/react-query';
+import { messagingKeys } from '../../hooks/queryKeys';
 
 // Simple inline message bubble component
 const MessageBubble: React.FC<{
@@ -171,6 +173,7 @@ const ChatWindow: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const queryClient = useQueryClient();
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -179,15 +182,28 @@ const ChatWindow: React.FC = () => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [showFilePreview, setShowFilePreview] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [isNewConversation, setIsNewConversation] = useState(false);
+  const [targetUser, setTargetUser] = useState<any>(null);
+  const [context, setContext] = useState<'connection' | 'marketplace'>('connection');
+  const [isCreating, setIsCreating] = useState(false);
 
-  const otherUser = location.state?.otherUser || {
-    id: '',
-    name: 'Unknown User',
-    avatar: '',
-    status: 'member',
-  };
-  const listing = location.state?.listing || null;
+  // Determine if this is a new conversation (no conversationId)
+  useEffect(() => {
+    if (!conversationId) {
+      const state = location.state as any;
+      if (state?.otherUser) {
+        setIsNewConversation(true);
+        setTargetUser(state.otherUser);
+        setContext(state.context || 'connection');
+      } else {
+        navigate('/messages');
+      }
+    } else {
+      setIsNewConversation(false);
+    }
+  }, [conversationId, location.state, navigate]);
 
+  // For existing conversations, use the normal hooks
   const {
     data: messagesData,
     fetchNextPage,
@@ -198,34 +214,75 @@ const ChatWindow: React.FC = () => {
   const markAsRead = useMarkAsRead(conversationId!);
   useConversationSubscription(conversationId!);
 
-  const messages = messagesData?.pages.flat() || [];
+  const [localMessages, setLocalMessages] = useState<any[]>([]);
+  const messages = isNewConversation ? localMessages : (messagesData?.pages.flat() || []);
 
   // Scroll to bottom on new messages
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // Mark messages as read when conversation opens
+  // Mark messages as read when conversation opens (only for existing)
   useEffect(() => {
-    if (conversationId && user) {
+    if (conversationId && user && !isNewConversation) {
       markAsRead.mutate();
     }
-  }, [conversationId, user]);
+  }, [conversationId, user, isNewConversation]);
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newMessage.trim() || !conversationId) return;
+    if (!newMessage.trim() || !user || isCreating) return;
 
-    sendMessageMutation.mutate(
-      {
-        content: newMessage,
-        type: 'text',
-        listingId: listing?.id,
-      },
-      {
-        onSuccess: () => setNewMessage(''),
+    if (isNewConversation) {
+      setIsCreating(true);
+      try {
+        const newConversationId = await messagingService.getOrCreateConversation(
+          user.id,
+          targetUser.id,
+          context,
+          undefined
+        );
+
+        await messagingService.sendMessage(
+          newConversationId,
+          user.id,
+          newMessage.trim(),
+          'text',
+          undefined,
+          undefined
+        );
+
+        // Invalidate and force refetch of conversations and unread counts
+        await queryClient.invalidateQueries({ queryKey: messagingKeys.conversations() });
+        await queryClient.invalidateQueries({ queryKey: messagingKeys.unreadCounts() });
+        await queryClient.refetchQueries({ queryKey: messagingKeys.conversations() });
+        await queryClient.refetchQueries({ queryKey: messagingKeys.unreadCounts() });
+
+        navigate(`/messages/${newConversationId}`, {
+          replace: true,
+          state: {
+            otherUser: targetUser,
+            context,
+          },
+        });
+      } catch (error) {
+        console.error('Error creating conversation:', error);
+        alert('Failed to start conversation. Please try again.');
+      } finally {
+        setIsCreating(false);
       }
-    );
+    } else {
+      sendMessageMutation.mutate(
+        {
+          content: newMessage,
+          type: 'text',
+          listingId: location.state?.listing?.id,
+        },
+        {
+          onSuccess: () => setNewMessage(''),
+        }
+      );
+    }
   };
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -238,46 +295,100 @@ const ChatWindow: React.FC = () => {
   };
 
   const handleSendFile = async () => {
-    if (!selectedFile || !conversationId) return;
+    if (!selectedFile || !user || isCreating) return;
 
-    setUploading(true);
-    try {
-      const mediaUrl = await messagingService.uploadMedia(conversationId, selectedFile);
-      const messageType = selectedFile.type.startsWith('image/')
-        ? 'image'
-        : selectedFile.type.startsWith('video/')
-        ? 'video'
-        : selectedFile.type.startsWith('audio/')
-        ? 'audio'
-        : 'text';
+    if (isNewConversation) {
+      setIsCreating(true);
+      try {
+        const newConversationId = await messagingService.getOrCreateConversation(
+          user.id,
+          targetUser.id,
+          context,
+          undefined
+        );
+        const mediaUrl = await messagingService.uploadMedia(newConversationId, selectedFile);
+        const messageType = selectedFile.type.startsWith('image/')
+          ? 'image'
+          : selectedFile.type.startsWith('video/')
+          ? 'video'
+          : selectedFile.type.startsWith('audio/')
+          ? 'audio'
+          : 'text';
 
-      sendMessageMutation.mutate(
-        {
-          content: selectedFile.name,
-          type: messageType,
-          mediaUrl,
-          listingId: listing?.id,
-        },
-        {
-          onSettled: () => {
-            setShowFilePreview(false);
-            setSelectedFile(null);
-            setUploading(false);
+        await messagingService.sendMessage(
+          newConversationId,
+          user.id,
+          selectedFile.name,
+          messageType,
+          undefined,
+          mediaUrl
+        );
+
+        // Invalidate and force refetch
+        await queryClient.invalidateQueries({ queryKey: messagingKeys.conversations() });
+        await queryClient.invalidateQueries({ queryKey: messagingKeys.unreadCounts() });
+        await queryClient.refetchQueries({ queryKey: messagingKeys.conversations() });
+        await queryClient.refetchQueries({ queryKey: messagingKeys.unreadCounts() });
+
+        navigate(`/messages/${newConversationId}`, {
+          replace: true,
+          state: { otherUser: targetUser, context },
+        });
+      } catch (error) {
+        console.error('Upload failed:', error);
+        alert('Failed to upload file');
+      } finally {
+        setIsCreating(false);
+        setShowFilePreview(false);
+        setSelectedFile(null);
+      }
+    } else {
+      setUploading(true);
+      try {
+        const mediaUrl = await messagingService.uploadMedia(conversationId!, selectedFile);
+        const messageType = selectedFile.type.startsWith('image/')
+          ? 'image'
+          : selectedFile.type.startsWith('video/')
+          ? 'video'
+          : selectedFile.type.startsWith('audio/')
+          ? 'audio'
+          : 'text';
+
+        sendMessageMutation.mutate(
+          {
+            content: selectedFile.name,
+            type: messageType,
+            mediaUrl,
+            listingId: location.state?.listing?.id,
           },
-        }
-      );
-    } catch (error) {
-      console.error('Upload failed:', error);
-      setUploading(false);
-      alert('Failed to upload file');
+          {
+            onSettled: () => {
+              setShowFilePreview(false);
+              setSelectedFile(null);
+              setUploading(false);
+            },
+          }
+        );
+      } catch (error) {
+        console.error('Upload failed:', error);
+        setUploading(false);
+        alert('Failed to upload file');
+      }
     }
   };
 
   const handleLoadMore = () => {
-    if (hasNextPage && !isFetchingNextPage) {
+    if (hasNextPage && !isFetchingNextPage && !isNewConversation) {
       fetchNextPage();
     }
   };
+
+  const otherUser = isNewConversation ? targetUser : (location.state?.otherUser || {
+    id: '',
+    name: 'Unknown User',
+    avatar: '',
+    status: 'member',
+  });
 
   return (
     <div className="h-screen flex flex-col bg-gray-50">
@@ -307,10 +418,10 @@ const ChatWindow: React.FC = () => {
                 <h2 className="font-bold text-gray-900">{otherUser.name}</h2>
                 {otherUser.status === 'verified' && <VerifiedBadge size={12} />}
               </div>
-              {listing && (
+              {location.state?.listing && (
                 <div className="flex items-center gap-1 text-xs text-gray-500">
                   <Store className="w-3 h-3" />
-                  <span className="truncate max-w-[150px]">{listing.title}</span>
+                  <span className="truncate max-w-[150px]">{location.state.listing.title}</span>
                 </div>
               )}
             </div>
@@ -320,7 +431,7 @@ const ChatWindow: React.FC = () => {
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {hasNextPage && (
+        {!isNewConversation && hasNextPage && (
           <button
             onClick={handleLoadMore}
             disabled={isFetchingNextPage}
@@ -328,6 +439,11 @@ const ChatWindow: React.FC = () => {
           >
             {isFetchingNextPage ? 'Loading...' : 'Load older messages'}
           </button>
+        )}
+        {messages.length === 0 && isNewConversation && (
+          <div className="text-center text-gray-500 py-8">
+            <p>Send a message to start the conversation.</p>
+          </div>
         )}
         {messages.map((message, index) => {
           const isOwn = message.sender_id === user?.id;
@@ -358,6 +474,7 @@ const ChatWindow: React.FC = () => {
             type="button"
             onClick={() => fileInputRef.current?.click()}
             className="p-3 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-xl"
+            disabled={isCreating}
           >
             <Paperclip className="w-5 h-5" />
           </button>
@@ -367,13 +484,18 @@ const ChatWindow: React.FC = () => {
             onChange={(e) => setNewMessage(e.target.value)}
             placeholder="Type a message..."
             className="flex-1 px-4 py-2.5 bg-gray-100 rounded-xl border focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-400"
+            disabled={isCreating}
           />
           <button
             type="submit"
-            disabled={!newMessage.trim()}
+            disabled={!newMessage.trim() || isCreating}
             className="p-3 bg-green-600 text-white rounded-xl hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <Send className="w-5 h-5" />
+            {isCreating ? (
+              <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+            ) : (
+              <Send className="w-5 h-5" />
+            )}
           </button>
         </form>
       </div>
