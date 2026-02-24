@@ -1,15 +1,16 @@
 import type { ReactNode } from 'react';
 import { useEffect } from 'react';
-import { useNavigate, Outlet } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../services/supabase';
 
 interface RequireAdminProps {
-  children?: ReactNode; // optional to support both wrapper and layout usage
+  children: ReactNode;
 }
 
 export const RequireAdmin: React.FC<RequireAdminProps> = ({ children }) => {
   const navigate = useNavigate();
+  const location = useLocation();
 
   const { data: isAdmin, isLoading, error } = useQuery({
     queryKey: ['isAdmin'],
@@ -23,9 +24,10 @@ export const RequireAdmin: React.FC<RequireAdminProps> = ({ children }) => {
 
   useEffect(() => {
     if (!isLoading && !error && isAdmin === false) {
-      navigate('/');
+      // Redirect to admin login, preserving the intended destination
+      navigate(`/admin/login?returnTo=${encodeURIComponent(location.pathname)}`);
     }
-  }, [isAdmin, isLoading, error, navigate]);
+  }, [isAdmin, isLoading, error, navigate, location.pathname]);
 
   if (isLoading) {
     return (
@@ -39,6 +41,5 @@ export const RequireAdmin: React.FC<RequireAdminProps> = ({ children }) => {
     return null; // will redirect via useEffect
   }
 
-  // If children are provided (wrapper mode), render them; otherwise render Outlet (layout route)
-  return <>{children ? children : <Outlet />}</>;
+  return <>{children}</>;
 };

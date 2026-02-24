@@ -2,7 +2,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useNotifications } from '../hooks/useNotifications';
 import { formatTimeAgo } from '../utils/formatters';
-import { CheckCheck, User, MessageCircle, ShoppingBag, Briefcase, Calendar, LifeBuoy, Megaphone } from 'lucide-react';
+import { CheckCheck, User, MessageCircle, ShoppingBag, Briefcase, Calendar, LifeBuoy, Megaphone, UserCheck } from 'lucide-react';
 
 const getIconForType = (type: string) => {
   switch (type) {
@@ -20,6 +20,8 @@ const getIconForType = (type: string) => {
       return <LifeBuoy className="text-indigo-500" size={18} />;
     case 'announcement':
       return <Megaphone className="text-red-500" size={18} />;
+    case 'system':
+      return <UserCheck className="text-gray-500" size={18} />;
     default:
       return null;
   }
@@ -37,37 +39,42 @@ const groupNotificationsByType = (notifications: any[]) => {
 export const NotificationsPage: React.FC = () => {
   const navigate = useNavigate();
   const { notifications, unreadCount, markAllAsRead, markAsRead } = useNotifications();
+
   const handleNotificationClick = (notification: any) => {
     // Mark as read
     if (!notification.read) {
       markAsRead(notification.id);
     }
 
-    // Navigate based on type and reference_id
-    const { type, reference_id, subtype, sender_id } = notification;
-    if (!reference_id && type !== 'announcement') return;
+    const { type, reference_id, sender_id } = notification;
 
     switch (type) {
       case 'post':
-        navigate(`/post/${reference_id}`);
+        if (reference_id) navigate(`/post/${reference_id}`);
         break;
       case 'connection':
-        navigate(`/profile/${sender_id}`); // or to a requests page
+        if (sender_id) navigate(`/profile/${sender_id}`);
         break;
       case 'marketplace':
-        navigate(`/marketplace/${reference_id}`);
+        if (reference_id) navigate(`/marketplace/${reference_id}`);
         break;
       case 'business':
-        navigate(`/business/${reference_id}`);
+        if (reference_id) navigate(`/business/${reference_id}`);
         break;
       case 'event':
-        navigate(`/event/${reference_id}`);
+        if (reference_id) navigate(`/event/${reference_id}`);
         break;
       case 'support':
-        navigate(`/support/${reference_id}`);
+        if (reference_id) navigate(`/support/${reference_id}`);
         break;
       case 'announcement':
-        navigate(`/announcements/${reference_id}`);
+        if (reference_id) navigate(`/announcements/${reference_id}`);
+        break;
+      case 'system':
+        // For system notifications (like user status change), maybe navigate to profile
+        // or just do nothing. Here we optionally navigate to the user's own profile.
+        // You could also do nothing: break;
+        if (sender_id) navigate(`/profile/${sender_id}`);
         break;
       default:
         break;
@@ -125,12 +132,14 @@ export const NotificationsPage: React.FC = () => {
                     )}
                     <div className="flex-1 min-w-0">
                       <p className="text-sm text-gray-900">
-                        {notification.content}
+                        {notification.type === 'announcement' && notification.data?.title
+                          ? notification.data.title
+                          : notification.content}
                       </p>
                       <p className="text-xs text-gray-500 mt-1">
                         {formatTimeAgo(notification.created_at)}
                       </p>
-                      {notification.data && (
+                      {notification.data?.snippet && (
                         <p className="text-xs text-gray-600 mt-1 line-clamp-1">
                           {notification.data.snippet}
                         </p>

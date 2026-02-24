@@ -36,7 +36,7 @@ const MarketplaceDetail: React.FC = () => {
     refetch: refetchReviews,
   } = useReviews(id!);
 
-  // Safe defaults
+  // Safe defaults – added seller_avatar
   const safeListing = {
     id: listing?.id || '',
     seller_id: listing?.seller_id || '',
@@ -51,6 +51,7 @@ const MarketplaceDetail: React.FC = () => {
     created_at: listing?.created_at || new Date().toISOString(),
     seller_name: listing?.seller_name || 'Unknown',
     seller_verified: listing?.seller_verified || false,
+    seller_avatar: listing?.seller_avatar || null,  // <-- added
     is_favorited: listing?.is_favorited || false,
     favorite_count: listing?.favorite_count || 0,
     is_sold: listing?.is_sold || false,
@@ -129,8 +130,28 @@ const MarketplaceDetail: React.FC = () => {
     }
   };
 
+  // NEW: Contact seller handler
   const handleContact = () => {
-    showFeedback('Contact feature coming soon!', 'error');
+    if (!user) {
+      showFeedback('Please sign in to contact the seller', 'error');
+      return;
+    }
+    // Navigate to the messages page with state for a new conversation
+    navigate('/messages', {
+      state: {
+        otherUser: {
+          id: safeListing.seller_id,
+          name: safeListing.seller_name,
+          avatar: safeListing.seller_avatar,
+          status: safeListing.seller_verified ? 'verified' : 'member',
+        },
+        context: 'marketplace',
+        listing: {
+          id: safeListing.id,
+          title: safeListing.title,
+        },
+      },
+    });
   };
 
   if (listingLoading) {
@@ -208,7 +229,7 @@ const MarketplaceDetail: React.FC = () => {
 
       <div className="max-w-7xl mx-auto p-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Left column - Images (unchanged) */}
+          {/* Left column - Images */}
           <div className="space-y-3">
             <div className="aspect-square bg-white rounded-xl overflow-hidden border border-green-200">
               <img
@@ -234,7 +255,7 @@ const MarketplaceDetail: React.FC = () => {
             )}
           </div>
 
-          {/* Right column - Details (mostly unchanged, but use safeListing) */}
+          {/* Right column - Details */}
           <div className="space-y-4">
             {/* Title and price */}
             <div>
@@ -277,8 +298,12 @@ const MarketplaceDetail: React.FC = () => {
               <h2 className="font-semibold text-gray-900 mb-2">Seller Information</h2>
               <div className="flex items-center gap-3">
                 <div className="relative">
-                  <div className="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center text-white font-bold">
-                    {safeListing.seller_name?.charAt(0).toUpperCase() || 'U'}
+                  <div className="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center text-white font-bold overflow-hidden">
+                    {safeListing.seller_avatar ? (
+                      <img src={safeListing.seller_avatar} alt={safeListing.seller_name} className="w-full h-full object-cover" />
+                    ) : (
+                      safeListing.seller_name?.charAt(0).toUpperCase() || 'U'
+                    )}
                   </div>
                   {safeListing.seller_verified && (
                     <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-green-500 rounded-full flex items-center justify-center border-2 border-white">

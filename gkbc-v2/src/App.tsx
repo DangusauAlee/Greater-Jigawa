@@ -31,6 +31,7 @@ import Terms from './pages/Terms';
 import Privacy from './pages/Privacy';
 import LandingPage from './pages/LandingPage';
 
+import AdminLogin from './pages/admin/AdminLogin';
 import AdminOverview from './pages/admin/AdminOverview';
 import AdminLayout from './components/admin/AdminLayout'; // new import
 import AdminUsers from './pages/admin/AdminUsers';
@@ -97,7 +98,7 @@ function App() {
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/Terms" element={<Terms />} />
             <Route path="/Privacy" element={<Privacy />} />
-
+            <Route path="/admin/login" element={<AdminLogin />} />
             {/* Admin routes - with admin layout */}
             <Route path="/admin" element={<RequireAdmin />}>
               <Route element={<AdminLayout />}>
