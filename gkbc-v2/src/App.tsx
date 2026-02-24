@@ -33,8 +33,17 @@ import LandingPage from './pages/LandingPage';
 
 import AdminOverview from './pages/admin/AdminOverview';
 import AdminLayout from './components/admin/AdminLayout'; // new import
+import AdminUsers from './pages/admin/AdminUsers';
+import AdminMarketplace from './pages/admin/AdminMarketplace';
+import AdminBusinesses from './pages/admin/AdminBusinesses';
+import AdminJobsEvents from './pages/admin/AdminJobsEvents';
+import AdminTickets from './pages/admin/AdminTickets';
+import AdminAnnouncements from './pages/admin/AdminAnnouncements';
+import AdminManagement from './pages/admin/AdminManagement';
 
 // Presence tracker component – must be inside AuthProvider
+
+
 const PresenceTracker: React.FC = () => {
   usePresence();
   return null;
@@ -94,6 +103,13 @@ function App() {
               <Route element={<AdminLayout />}>
                 <Route index element={<AdminOverview />} />
                 {/* Add more admin sub‑routes here as needed */}
+                <Route path="/admin/users" element={<RequireAdmin><AdminUsers /></RequireAdmin>} />
+                <Route path="/admin/marketplace" element={<RequireAdmin><AdminMarketplace /></RequireAdmin>} />
+                <Route path="/admin/businesses" element={<RequireAdmin><AdminBusinesses /></RequireAdmin>} />
+                <Route path="/admin/jobs-events" element={<RequireAdmin><AdminJobsEvents /></RequireAdmin>} />
+                <Route path="/admin/tickets" element={<RequireAdmin><AdminTickets /></RequireAdmin>} />
+                <Route path="/admin/announcements" element={<RequireAdmin><AdminAnnouncements /></RequireAdmin>} />
+                <Route path="/admin/manage-admins" element={<RequireAdmin><AdminManagement /></RequireAdmin>} />
               </Route>
             </Route>
 

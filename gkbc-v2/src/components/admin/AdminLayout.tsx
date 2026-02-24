@@ -29,10 +29,10 @@ const AdminLayout: React.FC = () => {
     { to: '/admin/users', icon: Users, label: 'Users' },
     { to: '/admin/marketplace', icon: ShoppingBag, label: 'Marketplace' },
     { to: '/admin/businesses', icon: Briefcase, label: 'Businesses' },
-    { to: '/admin/explore', icon: Calendar, label: 'Explore' },
+    { to: '/admin/jobs-events', icon: Calendar, label: 'Explore' },
     { to: '/admin/tickets', icon: Ticket, label: 'Support' },
     { to: '/admin/announcements', icon: Megaphone, label: 'Announcements' },
-    { to: '/admin/settings', icon: Settings, label: 'Settings' },
+    { to: '/admin/manage-admins', icon: Settings, label: 'Admin Management' },
   ];
 
   return (
