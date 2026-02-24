@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryProvider } from './Providers/QueryProvider';
+import { RequireAdmin } from './components/RequiredAdmin';
 import { usePresence } from './hooks/usePresence';
 import { AuthProvider } from './contexts/AuthContext';
 import { NotificationsPage } from './pages/NotificationsPage';
@@ -29,6 +30,11 @@ import HelpSupport from './pages/HelpSupport';
 import Terms from './pages/Terms';
 import Privacy from './pages/Privacy';
 import LandingPage from './pages/LandingPage';
+
+import AdminOverview from './pages/admin/AdminOverview';
+
+
+
 
 
 
@@ -86,6 +92,10 @@ function App() {
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/Terms" element={<Terms />} /> 
             <Route path="/Privacy" element={<Privacy />} />
+          
+          <Route path="/admin" element= {<RequireAdmin><AdminOverview />  </RequireAdmin> }/>
+
+
             {/* Protected pages - with layout */}
             <Route path="/Home" element={<Layout><Home /></Layout>} />
             <Route path="/Members" element={<Layout><Members /></Layout>} />
