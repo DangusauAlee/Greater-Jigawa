@@ -32,11 +32,7 @@ import Privacy from './pages/Privacy';
 import LandingPage from './pages/LandingPage';
 
 import AdminOverview from './pages/admin/AdminOverview';
-
-
-
-
-
+import AdminLayout from './components/admin/AdminLayout'; // new import
 
 // Presence tracker component – must be inside AuthProvider
 const PresenceTracker: React.FC = () => {
@@ -90,13 +86,18 @@ function App() {
             <Route path="/Signup" element={<Signup />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password" element={<ResetPassword />} />
-            <Route path="/Terms" element={<Terms />} /> 
+            <Route path="/Terms" element={<Terms />} />
             <Route path="/Privacy" element={<Privacy />} />
-          
-          <Route path="/admin" element= {<RequireAdmin><AdminOverview />  </RequireAdmin> }/>
 
+            {/* Admin routes - with admin layout */}
+            <Route path="/admin" element={<RequireAdmin />}>
+              <Route element={<AdminLayout />}>
+                <Route index element={<AdminOverview />} />
+                {/* Add more admin sub‑routes here as needed */}
+              </Route>
+            </Route>
 
-            {/* Protected pages - with layout */}
+            {/* Protected pages - with main layout */}
             <Route path="/Home" element={<Layout><Home /></Layout>} />
             <Route path="/Members" element={<Layout><Members /></Layout>} />
             <Route path="/Marketplace" element={<Layout><Marketplace /></Layout>} />
