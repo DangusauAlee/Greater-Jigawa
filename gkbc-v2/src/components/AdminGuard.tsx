@@ -1,14 +1,10 @@
-import type { ReactNode } from 'react';
 import { useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, Outlet } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../services/supabase';
+import AdminLayout from './admin/AdminLayout';
 
-interface RequireAdminProps {
-  children: ReactNode;
-}
-
-export const RequireAdmin: React.FC<RequireAdminProps> = ({ children }) => {
+const AdminGuard: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -24,7 +20,6 @@ export const RequireAdmin: React.FC<RequireAdminProps> = ({ children }) => {
 
   useEffect(() => {
     if (!isLoading && !error && isAdmin === false) {
-      // Redirect to admin login, preserving the intended destination
       navigate(`/admin/login?returnTo=${encodeURIComponent(location.pathname)}`);
     }
   }, [isAdmin, isLoading, error, navigate, location.pathname]);
@@ -41,5 +36,7 @@ export const RequireAdmin: React.FC<RequireAdminProps> = ({ children }) => {
     return null; // will redirect via useEffect
   }
 
-  return <>{children}</>;
+  return <AdminLayout />;
 };
+
+export default AdminGuard;

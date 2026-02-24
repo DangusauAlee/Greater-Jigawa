@@ -1,13 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { NavLink, Outlet } from 'react-router-dom';
+import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import {
   Menu, X, LayoutDashboard, Users, ShoppingBag, Briefcase,
-  Calendar, Ticket, Megaphone, Settings, LogOut
+  Calendar, Ticket, Megaphone, Settings, LogOut, Loader2
 } from 'lucide-react';
+import { supabase } from '../../services/supabase';
 
 const AdminLayout: React.FC = () => {
+  const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
 
   // Detect screen size to close sidebar on desktop by default and handle responsiveness
   useEffect(() => {
@@ -23,6 +26,20 @@ const AdminLayout: React.FC = () => {
   }, []);
 
   const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
+
+  const handleLogout = async () => {
+    setLoggingOut(true);
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+      navigate('/admin/login'); // Redirect to admin login
+    } catch (error) {
+      console.error('Logout error:', error);
+      // Optionally show a toast notification
+    } finally {
+      setLoggingOut(false);
+    }
+  };
 
   const navItems = [
     { to: '/admin', icon: LayoutDashboard, label: 'Overview', end: true },
@@ -91,13 +108,16 @@ const AdminLayout: React.FC = () => {
           {/* Logout */}
           <div className="p-3 border-t border-green-200">
             <button
-              className="flex items-center gap-3 px-3 py-2 w-full rounded-lg text-sm font-medium text-gray-700 hover:bg-red-50 hover:text-red-600 transition-colors"
-              onClick={() => {
-                // handle logout logic
-              }}
+              className="flex items-center gap-3 px-3 py-2 w-full rounded-lg text-sm font-medium text-gray-700 hover:bg-red-50 hover:text-red-600 transition-colors disabled:opacity-50"
+              onClick={handleLogout}
+              disabled={loggingOut}
             >
-              <LogOut size={18} />
-              <span>Logout</span>
+              {loggingOut ? (
+                <Loader2 size={18} className="animate-spin" />
+              ) : (
+                <LogOut size={18} />
+              )}
+              <span>{loggingOut ? 'Logging out...' : 'Logout'}</span>
             </button>
           </div>
         </div>

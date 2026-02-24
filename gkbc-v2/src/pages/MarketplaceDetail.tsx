@@ -137,7 +137,7 @@ const MarketplaceDetail: React.FC = () => {
       return;
     }
     // Navigate to the messages page with state for a new conversation
-    navigate('/messages', {
+    navigate('/messages/new/chat', {
       state: {
         otherUser: {
           id: safeListing.seller_id,

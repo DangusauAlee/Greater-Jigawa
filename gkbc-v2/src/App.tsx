@@ -1,7 +1,6 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryProvider } from './Providers/QueryProvider';
-import { RequireAdmin } from './components/RequiredAdmin';
 import { usePresence } from './hooks/usePresence';
 import { AuthProvider } from './contexts/AuthContext';
 import { NotificationsPage } from './pages/NotificationsPage';
@@ -33,7 +32,7 @@ import LandingPage from './pages/LandingPage';
 
 import AdminLogin from './pages/admin/AdminLogin';
 import AdminOverview from './pages/admin/AdminOverview';
-import AdminLayout from './components/admin/AdminLayout'; // new import
+import AdminGuard from './components/AdminGuard';
 import AdminUsers from './pages/admin/AdminUsers';
 import AdminMarketplace from './pages/admin/AdminMarketplace';
 import AdminBusinesses from './pages/admin/AdminBusinesses';
@@ -43,8 +42,6 @@ import AdminAnnouncements from './pages/admin/AdminAnnouncements';
 import AdminManagement from './pages/admin/AdminManagement';
 
 // Presence tracker component – must be inside AuthProvider
-
-
 const PresenceTracker: React.FC = () => {
   usePresence();
   return null;
@@ -99,19 +96,17 @@ function App() {
             <Route path="/Terms" element={<Terms />} />
             <Route path="/Privacy" element={<Privacy />} />
             <Route path="/admin/login" element={<AdminLogin />} />
-            {/* Admin routes - with admin layout */}
-            <Route path="/admin" element={<RequireAdmin />}>
-              <Route element={<AdminLayout />}>
-                <Route index element={<AdminOverview />} />
-                {/* Add more admin sub‑routes here as needed */}
-                <Route path="/admin/users" element={<RequireAdmin><AdminUsers /></RequireAdmin>} />
-                <Route path="/admin/marketplace" element={<RequireAdmin><AdminMarketplace /></RequireAdmin>} />
-                <Route path="/admin/businesses" element={<RequireAdmin><AdminBusinesses /></RequireAdmin>} />
-                <Route path="/admin/jobs-events" element={<RequireAdmin><AdminJobsEvents /></RequireAdmin>} />
-                <Route path="/admin/tickets" element={<RequireAdmin><AdminTickets /></RequireAdmin>} />
-                <Route path="/admin/announcements" element={<RequireAdmin><AdminAnnouncements /></RequireAdmin>} />
-                <Route path="/admin/manage-admins" element={<RequireAdmin><AdminManagement /></RequireAdmin>} />
-              </Route>
+
+            {/* Admin routes – protected by AdminGuard, nested under /admin */}
+            <Route path="/admin" element={<AdminGuard />}>
+              <Route index element={<AdminOverview />} />
+              <Route path="users" element={<AdminUsers />} />
+              <Route path="marketplace" element={<AdminMarketplace />} />
+              <Route path="businesses" element={<AdminBusinesses />} />
+              <Route path="jobs-events" element={<AdminJobsEvents />} />
+              <Route path="tickets" element={<AdminTickets />} />
+              <Route path="announcements" element={<AdminAnnouncements />} />
+              <Route path="manage-admins" element={<AdminManagement />} />
             </Route>
 
             {/* Protected pages - with main layout */}
@@ -131,10 +126,12 @@ function App() {
             <Route path="/HelpSupport" element={<Layout><HelpSupport /></Layout>} />
             <Route path="/notifications" element={<Layout><NotificationsPage /></Layout>} />
             <Route path="/announcements/:id" element={<Layout><AnnouncementPage /></Layout>} />
+
             {/* Notification navigation routes */}
             <Route path="/post/:id" element={<Layout><Home /></Layout>} />
             <Route path="/event/:id" element={<Layout><Explore /></Layout>} />
             <Route path="/support/:id" element={<Layout><HelpSupport /></Layout>} />
+
             {/* Fallback */}
             <Route path="*" element={<Navigate to="/Home" replace />} />
           </Routes>
