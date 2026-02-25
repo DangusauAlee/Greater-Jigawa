@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from 'react';
-import { MessageCircle, LogOut, Bell, User, HelpCircle } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { Bell, MessageCircle, User, HelpCircle, LogOut } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { supabase } from '../services/supabase';
 import VerifiedBadge from './VerifiedBadge';
 import { useUnreadCounts } from '../hooks/useUnreadCounts';
-import { useNotifications } from '../hooks/useNotifications'; // <-- import
+import { useNotifications } from '../hooks/useNotifications';
+import { useQueryClient } from '@tanstack/react-query'; // <-- ADDED: import hook
 
 interface HeaderProps {
   userName?: string;
@@ -27,12 +28,15 @@ const Header: React.FC<HeaderProps> = ({
   const [profileData, setProfileData] = useState<any>(null);
   const [userStatus, setUserStatus] = useState<'verified' | 'member'>('member');
   
+  // ADDED: get the query client instance
+  const queryClient = useQueryClient();
+
   // Use the real unread counts hook for messages
   const { data: unreadCounts } = useUnreadCounts();
   const unreadMessageCount = unreadCounts?.total || 0;
   
   // Use the notifications hook for real unread count
-  const { unreadCount: unreadNotificationCount } = useNotifications(); // <-- replace
+  const { unreadCount: unreadNotificationCount } = useNotifications();
 
   useEffect(() => {
     const getCurrentUser = async () => {
@@ -79,9 +83,13 @@ const Header: React.FC<HeaderProps> = ({
   const handleLogout = async () => {
     try {
       await supabase.auth.signOut();
+      // ADDED: clear all React Query cache
+      queryClient.clear();
       navigate('/login');
     } catch (error) {
       console.error('Error logging out:', error);
+      // Even on error, try to clear cache and redirect
+      queryClient.clear();
       navigate('/login');
     }
   };
@@ -93,7 +101,6 @@ const Header: React.FC<HeaderProps> = ({
   const handleNavigateToNotifications = () => {
     navigate('/notifications');
   };
-
 
   const profileMenuItems = [
     { label: 'My Profile', path: '/profile', icon: User },
